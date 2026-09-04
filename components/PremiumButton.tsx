@@ -17,10 +17,10 @@ type PremiumButtonProps = {
 
 const variantClasses = {
   primary:
-    "bg-frost text-ink shadow-glow hover:bg-white hover:shadow-[0_0_90px_rgba(157,255,215,0.2)]",
+    "bg-[#173A5E] text-white shadow-[0_10px_28px_rgba(28,64,99,0.18)] hover:bg-[#214C77]",
   secondary:
-    "border border-white/14 bg-white/8 text-frost hover:border-mint/50 hover:bg-white/12",
-  ghost: "text-frost hover:bg-white/8",
+    "border border-[#2E5E89]/25 bg-white/70 text-[#173A5E] hover:border-[#2E5E89]/45 hover:bg-white",
+  ghost: "text-[#173A5E] hover:bg-[#DDEAF2]/70",
 };
 
 export function PremiumButton({
@@ -33,7 +33,7 @@ export function PremiumButton({
   onClick,
 }: PremiumButtonProps) {
   const classes = cn(
-    "group inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300",
+    "group inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300",
     variantClasses[variant],
     className,
   );
@@ -56,13 +56,7 @@ export function PremiumButton({
   }
 
   return (
-    <motion.button
-      type={type}
-      onClick={onClick}
-      className={classes}
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.98 }}
-    >
+    <motion.button type={type} onClick={onClick} className={classes} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
       {content}
     </motion.button>
   );
