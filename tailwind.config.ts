@@ -10,22 +10,22 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#050508",
-        graphite: "#121411",
-        frost: "#F5F2EA",
-        muted: "#A4A89F",
-        mint: "#9DFFD7",
-        sage: "#B7D8C2",
-        steel: "#20241F",
-        aurora: "#D7FFE8",
+        ink: "#F4F0E8",
+        graphite: "#EAE5DC",
+        frost: "#15314F",
+        muted: "#65778A",
+        mint: "#4F83B6",
+        sage: "#8DB5D8",
+        steel: "#D5E0E8",
+        aurora: "#BFD8EA",
       },
       boxShadow: {
-        glow: "0 0 70px rgba(157, 255, 215, 0.12)",
-        sage: "0 0 80px rgba(183, 216, 194, 0.14)",
+        glow: "0 18px 50px rgba(49, 88, 126, 0.12)",
+        sage: "0 18px 55px rgba(74, 116, 154, 0.14)",
       },
       backgroundImage: {
         "radial-grid":
-          "radial-gradient(circle at top left, rgba(157,255,215,0.12), transparent 34%), radial-gradient(circle at 80% 15%, rgba(245,242,234,0.06), transparent 30%), linear-gradient(180deg, #050508 0%, #0B0D0B 50%, #050508 100%)",
+          "radial-gradient(circle at top left, rgba(109,161,204,0.16), transparent 34%), radial-gradient(circle at 82% 8%, rgba(255,255,255,0.7), transparent 28%), linear-gradient(180deg, #F8F4EC 0%, #EEF4F7 55%, #F5F0E8 100%)",
       },
     },
   },
