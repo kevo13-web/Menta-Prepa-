@@ -21,7 +21,7 @@ export function ResourceLibrary() {
 
   return (
     <div>
-      <div className="flex flex-col gap-4 rounded-lg border border-white/10 bg-white/[0.045] p-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-4 rounded-2xl border border-[#d6dfe6] bg-white/65 p-4 shadow-[0_12px_35px_rgba(53,82,110,0.06)] lg:flex-row lg:items-center lg:justify-between">
         <div className="flex gap-2 overflow-x-auto pb-1 lg:pb-0">
           {subjects.map((subject) => (
             <button
@@ -31,8 +31,8 @@ export function ResourceLibrary() {
               className={cn(
                 "shrink-0 rounded-full border px-4 py-2 text-sm transition",
                 activeSubject === subject
-                  ? "border-sage/50 bg-sage/15 text-frost"
-                  : "border-white/10 bg-white/5 text-muted hover:text-frost",
+                  ? "border-[#7aa5c8] bg-[#dceaf4] text-frost"
+                  : "border-[#d7dfe5] bg-[#faf7f1] text-muted hover:border-[#a9c2d6] hover:text-frost",
               )}
             >
               {subject}
@@ -40,13 +40,13 @@ export function ResourceLibrary() {
           ))}
         </div>
 
-        <label className="flex min-h-11 items-center gap-2 rounded-lg border border-white/10 bg-ink/70 px-3 text-sm text-muted focus-within:border-mint/50">
+        <label className="flex min-h-11 items-center gap-2 rounded-xl border border-[#d6dfe6] bg-[#fbf8f2] px-3 text-sm text-muted focus-within:border-[#79a6cb] focus-within:ring-2 focus-within:ring-[#8db5d8]/20">
           <Search className="h-4 w-4" />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Chercher une ressource"
-            className="w-full bg-transparent text-frost outline-none placeholder:text-muted lg:w-64"
+            className="w-full bg-transparent text-frost outline-none placeholder:text-[#8b99a6] lg:w-64"
           />
         </label>
       </div>
@@ -55,28 +55,28 @@ export function ResourceLibrary() {
         {visibleResources.map((resource) => (
           <article
             key={`${resource.subject}-${resource.title}`}
-            className="group rounded-lg border border-white/10 bg-white/[0.055] p-5 transition duration-300 hover:-translate-y-1 hover:border-sage/40 hover:bg-white/[0.08]"
+            className="group rounded-2xl border border-[#d7e0e6] bg-[#fbf8f2]/95 p-5 shadow-[0_12px_35px_rgba(53,82,110,0.05)] transition duration-300 hover:-translate-y-1 hover:border-[#9ebed5] hover:shadow-[0_18px_45px_rgba(53,82,110,0.09)]"
           >
             <div className="mb-6 flex items-start justify-between gap-4">
-              <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-mint/12 text-mint">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#dceaf4] text-[#4f83b6]">
                 {resource.type === "Checklist" || resource.type === "Grille d’évaluation" ? (
                   <FileCheck2 className="h-5 w-5" />
                 ) : (
                   <Archive className="h-5 w-5" />
                 )}
               </span>
-              <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-muted">
+              <span className="rounded-full border border-[#d6dfe6] bg-white/70 px-3 py-1 text-xs text-muted">
                 {resource.level}
               </span>
             </div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sage">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#4f83b6]">
               {resource.type}
             </p>
-            <h3 className="mt-3 text-lg font-semibold text-frost">{resource.title}</h3>
+            <h3 className="mt-3 font-serif text-xl font-semibold text-frost">{resource.title}</h3>
             <p className="mt-4 text-sm text-muted">{resource.subject}</p>
             <button
               type="button"
-              className="mt-6 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-frost transition group-hover:border-mint/45 group-hover:text-mint"
+              className="mt-6 rounded-full border border-[#cbd9e3] bg-white/55 px-4 py-2 text-sm font-semibold text-frost transition group-hover:border-[#79a6cb] group-hover:bg-[#eaf3f8]"
             >
               Ouvrir
             </button>
