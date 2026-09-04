@@ -8,34 +8,12 @@ type SectionHeaderProps = {
   className?: string;
 };
 
-export function SectionHeader({
-  eyebrow,
-  title,
-  description,
-  align = "left",
-  className,
-}: SectionHeaderProps) {
+export function SectionHeader({ eyebrow, title, description, align = "left", className }: SectionHeaderProps) {
   return (
-    <div
-      className={cn(
-        "max-w-3xl",
-        align === "center" && "mx-auto text-center",
-        className,
-      )}
-    >
-      {eyebrow ? (
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-mint">
-          {eyebrow}
-        </p>
-      ) : null}
-      <h2 className="text-balance text-3xl font-semibold tracking-normal text-frost sm:text-4xl lg:text-5xl">
-        {title}
-      </h2>
-      {description ? (
-        <p className="mt-4 text-base leading-7 text-muted sm:text-lg">
-          {description}
-        </p>
-      ) : null}
+    <div className={cn("max-w-3xl", align === "center" && "mx-auto text-center", className)}>
+      {eyebrow ? <p className="mb-3 text-xs font-semibold uppercase tracking-[0.26em] text-[#5b7e9c]">{eyebrow}</p> : null}
+      <h2 className="display-serif text-balance text-4xl font-medium leading-tight text-[#15314f] sm:text-5xl lg:text-6xl">{title}</h2>
+      {description ? <p className="mt-4 text-base leading-7 text-[#667b8d] sm:text-lg">{description}</p> : null}
     </div>
   );
 }
