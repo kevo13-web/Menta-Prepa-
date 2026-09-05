@@ -154,8 +154,9 @@ Priorités absolues :
 3. Identifier les définitions, thèses, arguments, exemples, auteurs, dates, concepts et distinctions réellement présents.
 4. Produire une fiche suffisamment rigoureuse pour servir ensuite de base à un rappel actif et à un quiz.
 5. Le champ subject doit être une matière scolaire/universitaire concise. ${subjectHint ? `L'utilisateur suggère la matière : ${subjectHint}.` : "Déduis la matière si elle est identifiable."}
-6. Les questions de quiz doivent porter uniquement sur la fiche et avoir une réponse objectivement défendable à partir de la source.
-7. Réponds uniquement dans le JSON imposé.`;
+6. Le champ chapter doit être un intitulé de chapitre court et académique qui permette de classer la fiche dans une bibliothèque. Déduis-le uniquement de la source ; s'il est impossible à identifier, utilise une formulation descriptive prudente.
+7. Les questions de quiz doivent porter uniquement sur la fiche et avoir une réponse objectivement défendable à partir de la source.
+8. Réponds uniquement dans le JSON imposé.`;
 
   const schema = {
     type: "object",
@@ -163,6 +164,7 @@ Priorités absolues :
     properties: {
       title: { type: "string" },
       subject: { type: "string" },
+      chapter: { type: "string" },
       subtitle: { type: "string" },
       thesis: { type: "string" },
       sections: {
@@ -202,7 +204,7 @@ Priorités absolues :
         },
       },
     },
-    required: ["title", "subject", "subtitle", "thesis", "sections", "distinctions", "recall", "quiz"],
+    required: ["title", "subject", "chapter", "subtitle", "thesis", "sections", "distinctions", "recall", "quiz"],
   };
 
   try {
@@ -237,12 +239,13 @@ Priorités absolues :
         user_id: user.id,
         title: generated.title,
         subject: generated.subject,
+        chapter: generated.chapter || null,
         source_type: sourceType,
         source_label: sourceLabel,
         source_path: storedPath,
         content: generated,
       })
-      .select("id, title, subject, content")
+      .select("id, title, subject, chapter, folder, favorite, mastery, content")
       .single();
 
     if (insertError || !row) {
