@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Archive, FileCheck2, Search } from "lucide-react";
+import { Archive, Brain, FileCheck2, Search } from "lucide-react";
 import { resources } from "@/data/siteData";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +18,12 @@ export function ResourceLibrary() {
       const haystack = `${resource.title} ${resource.type} ${resource.subject}`.toLowerCase();
       return matchesSubject && haystack.includes(query.toLowerCase());
     });
+  }, [activeSubject, query]);
+
+  const showEvilDemo = useMemo(() => {
+    const subjectMatches = activeSubject === "Toutes" || activeSubject === "Philosophie";
+    const haystack = "le mal philosophie privation positivité liberté augustin kant schelling arendt fiche conceptuelle doctorat quiz rappel actif";
+    return subjectMatches && haystack.includes(query.toLowerCase().trim());
   }, [activeSubject, query]);
 
   return (
@@ -52,6 +59,26 @@ export function ResourceLibrary() {
       </div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {showEvilDemo ? (
+          <article className="group rounded-2xl border border-[#566ff5]/22 bg-gradient-to-br from-[#edf1ff] via-white to-[#e8fbf5] p-5 shadow-[0_16px_42px_rgba(53,82,110,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_50px_rgba(53,82,110,0.12)]">
+            <div className="mb-6 flex items-start justify-between gap-4">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#566ff5] text-white shadow-sm">
+                <Brain className="h-5 w-5" />
+              </span>
+              <span className="rounded-full bg-white/85 px-3 py-1 text-xs font-semibold text-[#5267d9] shadow-sm">Doctorat</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#566ff5]">Fiche conceptuelle</p>
+              <span className="rounded-full bg-[#58d6b1]/18 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#287a64]">Quiz actif</span>
+            </div>
+            <h3 className="mt-3 font-serif text-xl font-semibold text-frost">Le mal : privation, positivité, liberté et scandale de la raison</h3>
+            <p className="mt-4 text-sm text-muted">Philosophie · fiche test Menta</p>
+            <Link href="/fiches/mal" className="mt-6 inline-flex min-h-10 items-center gap-2 rounded-full bg-[#566ff5] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#465de4]">
+              <Brain className="h-4 w-4" /> Lire & se tester
+            </Link>
+          </article>
+        ) : null}
+
         {visibleResources.map((resource) => (
           <article
             key={`${resource.subject}-${resource.title}`}
