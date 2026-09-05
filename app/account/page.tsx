@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { CreditCard, LogOut, ShieldCheck, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/auth/actions";
+import { BillingPortalButton } from "@/components/BillingPortalButton";
 
 export const metadata: Metadata = {
   title: "Mon compte | Menta Prépa",
@@ -21,7 +22,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("email, full_name, plan, subscription_status, current_period_end")
+    .select("email, full_name, plan, subscription_status, current_period_end, stripe_customer_id")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -61,6 +62,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
             </div>
             <div className="mt-6 flex items-center gap-2 text-sm text-muted"><ShieldCheck className="h-4 w-4 text-mint" /> Statut : {profile?.subscription_status ?? "inactive"}</div>
             {profile?.current_period_end ? <p className="mt-2 text-xs text-muted">Période actuelle jusqu’au {new Date(profile.current_period_end).toLocaleDateString("fr-FR")}</p> : null}
+            {profile?.stripe_customer_id ? <BillingPortalButton /> : null}
           </div>
         </div>
 
