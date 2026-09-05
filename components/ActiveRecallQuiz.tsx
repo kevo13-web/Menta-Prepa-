@@ -1,7 +1,7 @@
 "use client";
 
 import { Brain, CheckCircle2, Loader2, RotateCcw, Sparkles, Trophy, XCircle } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { RecallQuestion } from "@/data/evilStudy";
 
 type GradeStatus = "correct" | "partial" | "incorrect";
@@ -14,6 +14,16 @@ type Feedback = {
   strengths: string[];
   improved_answer: string;
   source: "ai" | "local";
+};
+
+type SavedQuizProgress = {
+  queue: number[];
+  answer: string;
+  feedback: Feedback | null;
+  attempts: Record<number, number>;
+  firstPassGrades: Record<number, GradeStatus>;
+  mastered: number[];
+  finished: boolean;
 };
 
 function normalize(value: string) {
@@ -102,6 +112,54 @@ export function ActiveRecallQuiz({
   const [firstPassGrades, setFirstPassGrades] = useState<Record<number, GradeStatus>>({});
   const [mastered, setMastered] = useState<number[]>([]);
   const [finished, setFinished] = useState(false);
+  const [progressReady, setProgressReady] = useState(false);
+
+  const storageKey = useMemo(
+    () => `menta-active-recall-v1:${questions.map((question) => question.id).join("|")}`,
+    [questions],
+  );
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (!raw) return;
+
+      const saved = JSON.parse(raw) as Partial<SavedQuizProgress>;
+      if (Array.isArray(saved.queue)) {
+        setQueue(saved.queue.filter((index) => Number.isInteger(index) && index >= 0 && index < questions.length));
+      }
+      if (typeof saved.answer === "string") setAnswer(saved.answer);
+      if (saved.feedback === null || (saved.feedback && typeof saved.feedback === "object")) {
+        setFeedback((saved.feedback as Feedback | null) ?? null);
+      }
+      if (saved.attempts && typeof saved.attempts === "object") setAttempts(saved.attempts);
+      if (saved.firstPassGrades && typeof saved.firstPassGrades === "object") setFirstPassGrades(saved.firstPassGrades);
+      if (Array.isArray(saved.mastered)) {
+        setMastered(saved.mastered.filter((index) => Number.isInteger(index) && index >= 0 && index < questions.length));
+      }
+      if (typeof saved.finished === "boolean") setFinished(saved.finished);
+    } catch {
+      window.localStorage.removeItem(storageKey);
+    } finally {
+      setProgressReady(true);
+    }
+  }, [questions.length, storageKey]);
+
+  useEffect(() => {
+    if (!progressReady) return;
+
+    const progress: SavedQuizProgress = {
+      queue,
+      answer,
+      feedback,
+      attempts,
+      firstPassGrades,
+      mastered,
+      finished,
+    };
+
+    window.localStorage.setItem(storageKey, JSON.stringify(progress));
+  }, [answer, attempts, feedback, finished, firstPassGrades, mastered, progressReady, queue, storageKey]);
 
   const currentIndex = queue[0] ?? 0;
   const current = questions[currentIndex];
@@ -307,7 +365,7 @@ export function ActiveRecallQuiz({
       </div>
 
       <div className="mt-3 shrink-0 border-t border-[#566ff5]/10 pt-3 text-center text-[11px] leading-5 text-[#7d8b9c]">
-        {title} · réponses correctes, presque justes ou à revoir ; les deux dernières sont reprogrammées jusqu'à maîtrise.
+        {title} · progression sauvegardée automatiquement ; tu peux consulter la fiche puis reprendre exactement où tu en étais.
       </div>
     </div>
   );
