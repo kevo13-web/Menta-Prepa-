@@ -27,8 +27,8 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <Link href="/auth" className="text-sm font-medium text-[#617688] transition hover:text-[#173a5e]">Connexion</Link>
-          <PremiumButton href="/planning" className="min-h-10 px-4 py-2">Essayer</PremiumButton>
+          <Link href="/account" className="text-sm font-medium text-[#617688] transition hover:text-[#173a5e]">Mon compte</Link>
+          <PremiumButton href="/#tarifs" className="min-h-10 px-4 py-2">Voir les offres</PremiumButton>
         </div>
 
         <button type="button" aria-label="Ouvrir le menu" onClick={() => setOpen((value) => !value)} className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#315b7f]/15 bg-white/65 text-[#173a5e] lg:hidden">
@@ -40,7 +40,7 @@ export function Navbar() {
         <div className="border-t border-[#315b7f]/10 bg-[#f8f4ed]/96 px-4 py-4 backdrop-blur-2xl lg:hidden">
           <div className="mx-auto flex max-w-7xl flex-col gap-2">
             {navItems.map((item) => <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={cn("rounded-xl px-3 py-3 text-sm text-[#607486] transition hover:bg-[#dceaf2] hover:text-[#173a5e]", pathname === item.href && "bg-[#dceaf2] text-[#173a5e]")}>{item.label}</Link>)}
-            <Link href="/auth" onClick={() => setOpen(false)} className="rounded-xl px-3 py-3 text-sm text-[#607486] transition hover:bg-[#dceaf2] hover:text-[#173a5e]">Connexion / Inscription</Link>
+            <Link href="/account" onClick={() => setOpen(false)} className="rounded-xl px-3 py-3 text-sm text-[#607486] transition hover:bg-[#dceaf2] hover:text-[#173a5e]">Mon compte</Link>
           </div>
         </div>
       ) : null}
