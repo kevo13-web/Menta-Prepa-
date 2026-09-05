@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 
 type Payload = {
+  studyType?: string;
+  track?: string;
   level?: string;
   subjects?: string[];
   courseHours?: string;
@@ -42,11 +44,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Requête invalide" }, { status: 400 });
   }
 
-  const level = clean(body.level, 200) || "Étudiant";
+  const studyType = clean(body.studyType, 180) || "Études supérieures";
+  const track = clean(body.track, 260) || clean(body.level, 200) || "Filière non précisée";
   const subjects = Array.isArray(body.subjects)
-    ? body.subjects.map((item) => clean(item, 120)).filter(Boolean).slice(0, 12)
+    ? body.subjects.map((item) => clean(item, 120)).filter(Boolean).slice(0, 20)
     : [];
-  const courseHours = clean(body.courseHours);
+  const courseHours = clean(body.courseHours, 9000);
   const freeHours = clean(body.freeHours);
   const deadlines = clean(body.deadlines);
   const goal = clean(body.goal);
@@ -63,22 +66,24 @@ export async function POST(request: Request) {
 
   const model = process.env.OPENAI_PLANNING_MODEL || process.env.OPENAI_GRADING_MODEL || "gpt-5.6-terra";
 
-  const instructions = `Tu es Menta Planner, un planificateur académique exigeant conçu pour des étudiants ambitieux. Tu transformes des contraintes réelles en semaine de travail réaliste, soutenable et orientée résultats.
+  const instructions = `Tu es Menta Planner, un planificateur académique exigeant conçu pour les cursus français. Tu transformes les contraintes réelles d'un étudiant en semaine de travail réaliste, soutenable et orientée résultats.
 
 Règles impératives :
-1. Respecte les horaires de cours et les indisponibilités : ne place aucun bloc de travail sur un créneau explicitement occupé.
-2. Priorise d'abord les échéances proches, puis les matières faibles/importantes, puis l'entretien régulier.
-3. Adapte la charge au niveau de fatigue. Fatigue 4 ou 5 = réduction nette du volume, davantage de récupération et aucun surmenage tardif.
-4. Utilise le rappel actif, la répétition espacée, la correction d'erreurs, les sujets blancs, les plans et l'oral quand ils sont pertinents.
-5. Les blocs de travail durent en général 25 à 120 minutes. Évite les journées absurdes ou surchargées.
-6. Prévois de vraies marges de récupération. Le repos est un outil de performance, pas un bloc décoratif.
-7. Chaque bloc doit avoir un objectif concret et vérifiable, jamais une formule vague comme « travailler l'histoire ».
-8. Répartis les tâches difficiles aux moments les plus favorables parmi les disponibilités fournies.
-9. Si les disponibilités sont imprécises, reste prudent et choisis des horaires plausibles sans prétendre connaître ce qui n'a pas été fourni.
-10. Produis les sept jours de lundi à dimanche. Les jours peuvent être très légers s'il n'y a rien d'utile à ajouter.
-11. Réponds uniquement dans le JSON imposé, en français.`;
+1. Respecte strictement l'emploi du temps et les indisponibilités : ne place aucun bloc de travail sur un créneau occupé.
+2. Adapte la méthode au type d'études et à la filière. Une CPGE, une licence de droit, un BUT, un BTS, une école d'ingénieurs ou un cursus de médecine n'ont pas les mêmes exercices, rythmes ni priorités.
+3. Priorise d'abord les échéances proches, puis les matières faibles/importantes, puis l'entretien régulier.
+4. Adapte la charge au niveau de fatigue. Fatigue 4 ou 5 = réduction nette du volume, davantage de récupération et aucun surmenage tardif.
+5. Utilise rappel actif, répétition espacée, correction d'erreurs, sujets blancs, exercices, annales, plans, oral, flashcards ou fichage uniquement quand ils sont pertinents pour le cursus.
+6. Les blocs de travail durent en général 25 à 120 minutes. Évite les journées absurdes ou surchargées.
+7. Prévois de vraies marges de récupération. Le repos est un outil de performance, pas un bloc décoratif.
+8. Chaque bloc doit avoir un objectif concret et vérifiable, jamais une formule vague comme « travailler l'histoire ».
+9. Répartis les tâches difficiles aux moments les plus favorables parmi les disponibilités fournies.
+10. Si les disponibilités sont imprécises, reste prudent et choisis des horaires plausibles sans prétendre connaître ce qui n'a pas été fourni.
+11. Produis les sept jours de lundi à dimanche. Les jours peuvent être très légers s'il n'y a rien d'utile à ajouter.
+12. Dans reason, explique brièvement pourquoi ce bloc est placé à cet endroit.
+13. Réponds uniquement dans le JSON imposé, en français.`;
 
-  const input = `SEMAINE DE RÉFÉRENCE\n${weekAnchor}\n\nNIVEAU\n${level}\n\nMATIÈRES\n${subjects.join(", ")}\n\nHORAIRES DE COURS / CONTRAINTES\n${courseHours || "Non précisés"}\n\nDISPONIBILITÉS\n${freeHours}\n\nÉCHÉANCES\n${deadlines || "Aucune échéance indiquée"}\n\nFATIGUE\n${fatigue}/5\n\nSTYLE DE TRAVAIL\n${workStyle}\n\nOBJECTIF HEBDOMADAIRE\n${goal}`;
+  const input = `SEMAINE DE RÉFÉRENCE\n${weekAnchor}\n\nTYPE D'ÉTUDES\n${studyType}\n\nFILIÈRE / ANNÉE\n${track}\n\nMATIÈRES\n${subjects.join(", ")}\n\nEMPLOI DU TEMPS / CONTRAINTES FIXES\n${courseHours || "Non précisés"}\n\nDISPONIBILITÉS DE TRAVAIL\n${freeHours}\n\nÉCHÉANCES\n${deadlines || "Aucune échéance indiquée"}\n\nFATIGUE\n${fatigue}/5\n\nSTYLE DE TRAVAIL\n${workStyle}\n\nOBJECTIF HEBDOMADAIRE\n${goal}`;
 
   try {
     const response = await fetch("https://api.openai.com/v1/responses", {
@@ -127,7 +132,7 @@ Règles impératives :
                       energy: { type: "string", enum: ["léger", "modéré", "intense"] },
                       blocks: {
                         type: "array",
-                        maxItems: 5,
+                        maxItems: 6,
                         items: {
                           type: "object",
                           additionalProperties: false,
