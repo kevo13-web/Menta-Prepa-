@@ -11,8 +11,8 @@ export default function PlanningPage() {
     <>
       <PageHero
         eyebrow="Planning IA"
-        title="Ton emploi du temps devient une stratégie d’exécution."
-        description="Menta AI arbitre tes priorités à partir de tes cours, disponibilités, échéances et niveau de fatigue, puis suit ce que tu accomplis réellement pendant la semaine."
+        title="Ton emploi du temps devient une stratégie de travail, pas une contrainte à subir."
+        description="Choisis ton cursus, importe ou photographie ton emploi du temps, indique tes échéances et ton niveau de fatigue. Menta analyse ta vraie semaine, construit les priorités et te laisse tout personnaliser."
       />
       <section className="px-4 pb-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
