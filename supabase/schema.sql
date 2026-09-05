@@ -22,8 +22,31 @@ create table if not exists public.user_progress (
   unique(user_id, key)
 );
 
+create table if not exists public.study_sheets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  subject text not null default 'Autre',
+  chapter text,
+  folder text not null default 'Sans dossier',
+  favorite boolean not null default false,
+  mastery integer not null default 0 check (mastery between 0 and 100),
+  source_type text not null check (source_type in ('photo', 'pdf', 'text', 'url')),
+  source_label text,
+  source_path text,
+  content jsonb not null default '{}'::jsonb,
+  last_opened_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists study_sheets_user_folder_idx on public.study_sheets(user_id, folder);
+create index if not exists study_sheets_user_subject_idx on public.study_sheets(user_id, subject);
+create index if not exists study_sheets_user_favorite_idx on public.study_sheets(user_id, favorite) where favorite = true;
+
 alter table public.profiles enable row level security;
 alter table public.user_progress enable row level security;
+alter table public.study_sheets enable row level security;
 
 create policy "Users can read their own profile"
 on public.profiles for select
@@ -41,6 +64,55 @@ on public.user_progress for all
 to authenticated
 using ((select auth.uid()) = user_id)
 with check ((select auth.uid()) = user_id);
+
+create policy "Users can read their own study sheets"
+on public.study_sheets for select
+to authenticated
+using ((select auth.uid()) = user_id);
+
+create policy "Users can create their own study sheets"
+on public.study_sheets for insert
+to authenticated
+with check ((select auth.uid()) = user_id);
+
+create policy "Users can update their own study sheets"
+on public.study_sheets for update
+to authenticated
+using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);
+
+create policy "Users can delete their own study sheets"
+on public.study_sheets for delete
+to authenticated
+using ((select auth.uid()) = user_id);
+
+insert into storage.buckets (id, name, public)
+values ('study-sources', 'study-sources', false)
+on conflict (id) do update set public = false;
+
+create policy "Users upload their own study sources"
+on storage.objects for insert
+to authenticated
+with check (
+  bucket_id = 'study-sources'
+  and (storage.foldername(name))[1] = (select auth.uid())::text
+);
+
+create policy "Users read their own study sources"
+on storage.objects for select
+to authenticated
+using (
+  bucket_id = 'study-sources'
+  and (storage.foldername(name))[1] = (select auth.uid())::text
+);
+
+create policy "Users delete their own study sources"
+on storage.objects for delete
+to authenticated
+using (
+  bucket_id = 'study-sources'
+  and (storage.foldername(name))[1] = (select auth.uid())::text
+);
 
 create or replace function public.handle_new_user()
 returns trigger
