@@ -27,6 +27,8 @@ import {
   type PomodoroSettings,
   usePomodoro,
 } from "@/components/PomodoroProvider";
+import { ActiveRecallQuiz } from "@/components/ActiveRecallQuiz";
+import { evilDemoSheet, type FocusSheet } from "@/data/evilStudy";
 import { resources } from "@/data/siteData";
 
 const phaseCopy: Record<PomodoroPhase, { label: string; eyebrow: string; hint: string }> = {
@@ -45,134 +47,6 @@ const phaseCopy: Record<PomodoroPhase, { label: string; eyebrow: string; hint: s
     eyebrow: "Recharge complète",
     hint: "Tu as terminé un cycle complet. Coupe vraiment quelques minutes.",
   },
-};
-
-type FocusSheetSection = {
-  title: string;
-  paragraphs: string[];
-  points?: string[];
-  reference?: string;
-};
-
-type FocusSheet = {
-  id: string;
-  title: string;
-  subject: string;
-  type: string;
-  level: string;
-  subtitle?: string;
-  thesis?: string;
-  sections?: FocusSheetSection[];
-  distinctions?: string[];
-  recall?: string[];
-  demo?: boolean;
-};
-
-const evilDemoSheet: FocusSheet = {
-  id: "demo-mal-philosophie",
-  title: "Le mal : privation, positivité, liberté et scandale de la raison",
-  subject: "Philosophie",
-  type: "Fiche conceptuelle",
-  level: "Doctorat",
-  demo: true,
-  subtitle:
-    "Cartographie problématique du mal, de l'ontologie augustinienne à la crise contemporaine de la théodicée.",
-  thesis:
-    "Le problème du mal devient philosophiquement aigu dès qu'on refuse simultanément deux solutions trop faciles : en faire une substance autonome, qui ruinerait l'unité de l'être, ou le réduire à une simple apparence, qui méconnaîtrait la réalité de la souffrance et de la faute. La tradition occidentale oscille ainsi entre dé-substantialisation ontologique, imputabilité morale, positivité de la liberté et critique de toute justification rationnelle de la souffrance.",
-  sections: [
-    {
-      title: "I. Le nœud métaphysique : comment le mal peut-il être sans être ?",
-      paragraphs: [
-        "Chez Augustin, la solution décisive consiste à refuser au mal toute substantialité propre. Tout ce qui est, en tant qu'il est, possède une mesure, une forme et un ordre ; l'être est donc convertible, selon une structure néoplatonicienne christianisée, avec un certain degré de bien. Le mal ne constitue pas un étant supplémentaire opposé au bien : il est privatio boni, défaut d'une perfection qui devrait appartenir à une nature donnée.",
-        "Cette thèse ne signifie pourtant pas que le mal serait irréel. La privation est ontologiquement parasitaire mais phénoménologiquement effective : une volonté corrompue, un corps mutilé ou une institution injuste existent positivement comme réalités, tandis que leur mal consiste dans la déficience d'ordre qui les affecte. L'avantage théologique est immédiat : Dieu n'a pas à créer le mal comme une chose. Mais le prix conceptuel est élevé, car il faut expliquer comment une privation peut produire des effets historiquement massifs.",
-      ],
-      points: [
-        "Ne pas confondre privation et simple absence : la cécité est privation de la vue chez un être naturellement destiné à voir.",
-        "Le mal n'est pas un principe rival du bien : l'anti-manichéisme est au cœur de l'argument augustinien.",
-        "La dé-substantialisation du mal déplace la question de l'ontologie vers la volonté et la responsabilité.",
-      ],
-      reference: "Augustin, Confessions, livre VII ; De natura boni ; Enchiridion.",
-    },
-    {
-      title: "II. Leibniz : rationaliser le mal sans l'attribuer directement à Dieu",
-      paragraphs: [
-        "La Théodicée leibnizienne systématise le problème en distinguant mal métaphysique, mal physique et mal moral. Le mal métaphysique désigne la limitation constitutive de toute créature finie ; le mal physique renvoie à la souffrance ; le mal moral à la faute. Dieu ne veut pas le mal moral comme fin, mais il peut le permettre dans l'économie du meilleur monde possible, c'est-à-dire du monde dont l'ensemble réalise le maximum de perfection compossible.",
-        "L'argument ne consiste donc pas à prétendre que chaque événement est bon isolément. Il faut raisonner au niveau du système total des compossibles. La difficulté est alors épistémologique et morale : une justification globale peut-elle rendre intelligible une souffrance singulière sans la convertir en simple moyen d'une harmonie supérieure ? C'est précisément ce que les critiques modernes de la théodicée refuseront.",
-      ],
-      points: [
-        "Possible ne signifie pas compossible : tous les biens imaginables ne peuvent pas nécessairement coexister dans un même monde.",
-        "La permission du mal ne vaut pas approbation du mal.",
-        "La théodicée cherche à concilier puissance, bonté et sagesse divines avec l'existence du mal.",
-      ],
-      reference: "Leibniz, Essais de Théodicée, notamment §§20-21 et la Préface.",
-    },
-    {
-      title: "III. Kant : le mal radical comme structure de la maxime, non comme substance",
-      paragraphs: [
-        "Avec Kant, le centre de gravité se déplace vers la structure de la liberté. Le mal radical n'est ni une nature démoniaque ni une pulsion naturelle qui abolirait la responsabilité. Il consiste dans une propension de la volonté à inverser l'ordre des mobiles : au lieu de subordonner l'amour de soi à la loi morale, le sujet conditionne l'obéissance à la loi par ses intérêts sensibles.",
-        "Le terme radical signifie que le mal concerne la racine de l'adoption des maximes, la Gesinnung, et non qu'il constituerait une substance diabolique. La difficulté devient alors celle d'une liberté qui doit pouvoir être imputée au sujet tout en étant décrite comme une propension universellement repérable dans l'humanité. Kant maintient ainsi ensemble universalité anthropologique et responsabilité intelligible.",
-      ],
-      points: [
-        "Le mal n'est pas la sensibilité elle-même : les inclinations ne sont pas moralement mauvaises par nature.",
-        "Le sujet mauvais reconnaît encore la loi morale ; il lui subordonne simplement d'autres mobiles selon un ordre inversé.",
-        "Un être véritablement diabolique qui choisirait le mal pour le mal sortirait, chez Kant, du cadre proprement humain.",
-      ],
-      reference: "Kant, La religion dans les limites de la simple raison, première partie.",
-    },
-    {
-      title: "IV. Schelling : penser une possibilité positive du mal sans retomber dans le dualisme",
-      paragraphs: [
-        "Le traité de 1809 sur la liberté radicalise le problème. Une simple théorie de la privation paraît insuffisante pour rendre compte de l'énergie positive de la faute. Schelling distingue en Dieu le fond obscur, Grund, et l'existence lumineuse, sans poser pour autant deux dieux ou deux substances. La créature libre peut désordonner le rapport des puissances et faire de ce qui devait rester particulier le principe dominant du tout.",
-        "Le mal possède dès lors une positivité dynamique : il n'est pas une chose indépendante, mais une perversion active de l'ordre. L'enjeu est de rendre la liberté métaphysiquement réelle. Une liberté qui ne pourrait choisir que le bien serait une nécessité déguisée ; mais une liberté réellement capable du mal oblige la métaphysique à inscrire la possibilité du désordre au cœur même d'un monde créé.",
-      ],
-      points: [
-        "Schelling ne réhabilite pas un manichéisme substantiel : la positivité du mal est celle d'une inversion de rapports.",
-        "La possibilité du mal devient condition d'une liberté non mécanique.",
-        "Le problème n'est plus seulement : d'où vient le défaut ? mais : comment une puissance d'inversion est-elle possible ?",
-      ],
-      reference: "Schelling, Recherches philosophiques sur l'essence de la liberté humaine, 1809.",
-    },
-    {
-      title: "V. Nietzsche et Arendt : de la métaphysique du mal à la généalogie et à la politique",
-      paragraphs: [
-        "Nietzsche déplace l'interrogation : avant de demander ce qu'est le mal, il faut demander qui a intérêt à qualifier certaines forces de bonnes ou mauvaises. La généalogie déconstruit la prétention des valeurs morales à exprimer une structure éternelle de l'être. Le couple bien/mal peut devenir l'effet historique d'une production de valeurs, notamment dans la morale du ressentiment. Cela ne supprime pas la cruauté réelle, mais interdit de confondre immédiatement condamnation morale et description ontologique.",
-        "Arendt, de son côté, fait apparaître une autre rupture. Dans Les Origines du totalitarisme, elle parle de mal radical pour désigner une destruction politique qui tend à rendre les hommes superflus. Dans Eichmann à Jérusalem, la formule de la banalité du mal ne signifie pas que les crimes seraient banals, mais qu'une catastrophe morale peut être accomplie par un agent dépourvu de profondeur démoniaque, dont la faillite tient à l'absence de pensée et de jugement. Le mal cesse ainsi d'être nécessairement spectaculaire dans sa subjectivité pour devenir administrativement normalisable.",
-      ],
-      points: [
-        "Généalogiser le mal ne revient pas à nier toute normativité ; cela oblige à interroger la provenance des valeurs.",
-        "La banalité du mal n'est pas une théorie générale de tout mal, ni une excuse psychologique d'Eichmann.",
-        "La modernité politique oblige à penser le mal à l'échelle des dispositifs, des bureaucraties et de l'obéissance ordinaire.",
-      ],
-      reference: "Nietzsche, Généalogie de la morale ; Arendt, Les Origines du totalitarisme et Eichmann à Jérusalem.",
-    },
-    {
-      title: "VI. Après la théodicée : souffrance, scandale et limites de la justification",
-      paragraphs: [
-        "La philosophie contemporaine devient particulièrement méfiante envers les discours qui totalisent la souffrance dans une économie rationnelle. Chez Levinas, la souffrance d'autrui résiste à la justification : l'expliquer comme moment nécessaire d'un ordre supérieur peut devenir moralement obscène. Le mal n'est plus seulement un problème spéculatif à résoudre ; il constitue une épreuve éthique qui met en question la prétention de la raison à convertir toute négativité en sens.",
-        "Ricœur permet alors de distinguer plusieurs registres : faute, souffrance, symbole, récit, plainte. Les symboles du mal ne sont pas des définitions scientifiques, mais des matrices de compréhension par lesquelles une culture donne forme à l'expérience de l'impureté, du péché ou de la culpabilité. Le problème du mal déborde donc toute discipline unique : il touche simultanément ontologie, anthropologie, morale, politique, théologie et herméneutique.",
-      ],
-      points: [
-        "Une explication causale du mal n'équivaut pas à une justification morale du mal.",
-        "La souffrance subie et la faute commise ne doivent pas être rabattues l'une sur l'autre.",
-        "Le refus de la théodicée peut lui-même devenir une position philosophique positive : préserver l'irréductibilité de la plainte et de la responsabilité.",
-      ],
-      reference: "Levinas, textes sur la souffrance inutile ; Ricœur, La symbolique du mal.",
-    },
-  ],
-  distinctions: [
-    "Mal ontologique / mal moral / mal physique : trois questions différentes qui ne doivent jamais être confondues.",
-    "Privation / négation : une privation suppose une perfection due à la nature considérée.",
-    "Expliquer / justifier : rendre intelligible une causalité ne légitime pas ce qui advient.",
-    "Possibilité du mal / réalité du mal : une métaphysique de la liberté doit penser la première sans naturaliser la seconde.",
-    "Responsabilité individuelle / production institutionnelle : l'analyse politique déplace le niveau d'imputation sans l'annuler automatiquement.",
-  ],
-  recall: [
-    "Pourquoi la théorie augustinienne de la privatio boni est-elle anti-manichéenne ?",
-    "En quoi le mal radical kantien est-il radical sans être diabolique ?",
-    "Pourquoi Schelling juge-t-il nécessaire de donner au mal une positivité dynamique ?",
-    "Quelle différence faut-il établir entre le mal radical des Origines du totalitarisme et la banalité du mal d'Eichmann à Jérusalem ?",
-    "Pourquoi une théodicée peut-elle devenir moralement problématique lorsqu'elle rencontre la souffrance singulière ?",
-  ],
 };
 
 const focusSheets: FocusSheet[] = [
@@ -383,7 +257,7 @@ export default function FocusPage() {
                         : "border-white/80 bg-white/70 text-[#38536c]"
                     }`}
                   >
-                    <LibraryBig className="h-4 w-4" /> Fiches
+                    <LibraryBig className="h-4 w-4" /> Fiches & quiz
                   </button>
                   <button
                     type="button"
@@ -523,7 +397,7 @@ export default function FocusPage() {
                     <BookOpen className="h-3.5 w-3.5" /> Réviser sans quitter Focus
                   </div>
                   <h2 className="display-serif text-3xl font-semibold text-[#182b49]">
-                    {selectedSheet ? "Lecture" : "Mes fiches"}
+                    {selectedSheet ? "Étudier" : "Mes fiches"}
                   </h2>
                 </div>
                 <button type="button" onClick={() => setSheetsOpen(false)} aria-label="Fermer les fiches" className="grid h-10 w-10 place-items-center rounded-full bg-[#f2f5ff] text-[#50637d] transition hover:bg-[#e8edff]">
@@ -568,6 +442,7 @@ export default function FocusPage() {
                                 {resource.demo ? <span className="rounded-full bg-[#566ff5] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white">Démo</span> : null}
                               </div>
                               <h3 className="mt-1 text-sm font-semibold leading-5 text-[#213955]">{resource.title}</h3>
+                              {resource.quiz ? <p className="mt-2 text-[11px] font-semibold text-[#2f8b72]">Quiz actif disponible · {resource.quiz.length} questions</p> : null}
                             </div>
                             <span className="shrink-0 rounded-full bg-white/75 px-2.5 py-1 text-[10px] font-semibold text-[#6c7d90]">{resource.level}</span>
                           </div>
@@ -637,6 +512,12 @@ export default function FocusPage() {
 }
 
 function SheetReader({ sheet, onBack }: { sheet: FocusSheet; onBack: () => void }) {
+  const [mode, setMode] = useState<"read" | "quiz">("read");
+
+  useEffect(() => {
+    setMode("read");
+  }, [sheet.id]);
+
   return (
     <div className="mt-5 flex min-h-0 flex-1 flex-col">
       <div className="shrink-0 border-b border-[#566ff5]/10 pb-4">
@@ -653,63 +534,97 @@ function SheetReader({ sheet, onBack }: { sheet: FocusSheet; onBack: () => void 
         </div>
         <h3 className="mt-2 display-serif text-2xl font-semibold leading-tight text-[#182b49] sm:text-3xl">{sheet.title}</h3>
         {sheet.subtitle ? <p className="mt-2 text-sm leading-6 text-[#63778e]">{sheet.subtitle}</p> : null}
+
+        {sheet.quiz ? (
+          <div className="mt-4 grid grid-cols-2 gap-2 rounded-2xl bg-[#f2f5fc] p-1.5">
+            <button
+              type="button"
+              onClick={() => setMode("read")}
+              className={`min-h-10 rounded-xl px-3 text-sm font-semibold transition ${mode === "read" ? "bg-white text-[#294762] shadow-sm" : "text-[#708195]"}`}
+            >
+              Lire la fiche
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("quiz")}
+              className={`min-h-10 rounded-xl px-3 text-sm font-semibold transition ${mode === "quiz" ? "bg-[#566ff5] text-white shadow-sm" : "text-[#5267d9]"}`}
+            >
+              Tester mes connaissances
+            </button>
+          </div>
+        ) : null}
       </div>
 
-      <article className="mt-4 flex-1 overflow-y-auto pr-2 text-[#304760]">
-        {sheet.thesis ? (
-          <div className="mb-6 rounded-2xl border border-[#58d6b1]/22 bg-[#eafaf5] p-4">
-            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[#2f8b72]">
-              <Brain className="h-4 w-4" /> Thèse directrice
+      {mode === "quiz" && sheet.quiz ? (
+        <div className="mt-4 min-h-0 flex-1">
+          <ActiveRecallQuiz questions={sheet.quiz} title={sheet.title} />
+        </div>
+      ) : (
+        <article className="mt-4 flex-1 overflow-y-auto pr-2 text-[#304760]">
+          {sheet.thesis ? (
+            <div className="mb-6 rounded-2xl border border-[#58d6b1]/22 bg-[#eafaf5] p-4">
+              <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[#2f8b72]">
+                <Brain className="h-4 w-4" /> Thèse directrice
+              </div>
+              <p className="text-sm leading-6">{sheet.thesis}</p>
             </div>
-            <p className="text-sm leading-6">{sheet.thesis}</p>
-          </div>
-        ) : null}
+          ) : null}
 
-        {sheet.sections?.map((section) => (
-          <section key={section.title} className="mb-7">
-            <h4 className="display-serif text-xl font-semibold leading-snug text-[#1d3552]">{section.title}</h4>
-            <div className="mt-3 space-y-3">
-              {section.paragraphs.map((paragraph) => (
-                <p key={paragraph.slice(0, 80)} className="text-[13.5px] leading-6 text-[#40566e]">{paragraph}</p>
-              ))}
-            </div>
-            {section.points ? (
-              <ul className="mt-4 space-y-2 rounded-2xl bg-[#f7f9fd] p-4 text-[13px] leading-5 text-[#4d6076]">
-                {section.points.map((point) => <li key={point} className="flex gap-2"><span className="mt-1 text-[#566ff5]">◆</span><span>{point}</span></li>)}
+          {sheet.sections?.map((section) => (
+            <section key={section.title} className="mb-7">
+              <h4 className="display-serif text-xl font-semibold leading-snug text-[#1d3552]">{section.title}</h4>
+              <div className="mt-3 space-y-3">
+                {section.paragraphs.map((paragraph) => (
+                  <p key={paragraph.slice(0, 80)} className="text-[13.5px] leading-6 text-[#40566e]">{paragraph}</p>
+                ))}
+              </div>
+              {section.points ? (
+                <ul className="mt-4 space-y-2 rounded-2xl bg-[#f7f9fd] p-4 text-[13px] leading-5 text-[#4d6076]">
+                  {section.points.map((point) => <li key={point} className="flex gap-2"><span className="mt-1 text-[#566ff5]">◆</span><span>{point}</span></li>)}
+                </ul>
+              ) : null}
+              {section.reference ? <p className="mt-3 text-[11px] font-medium italic leading-5 text-[#8190a1]">Références : {section.reference}</p> : null}
+            </section>
+          ))}
+
+          {sheet.distinctions ? (
+            <section className="mb-7 rounded-2xl border border-[#ffd665]/35 bg-[#fff9e4] p-4">
+              <h4 className="text-sm font-bold uppercase tracking-[0.16em] text-[#8c7125]">Distinctions à maîtriser</h4>
+              <ul className="mt-3 space-y-2 text-[13px] leading-5 text-[#5e5a49]">
+                {sheet.distinctions.map((item) => <li key={item} className="flex gap-2"><span className="text-[#d2a62f]">—</span><span>{item}</span></li>)}
               </ul>
-            ) : null}
-            {section.reference ? <p className="mt-3 text-[11px] font-medium italic leading-5 text-[#8190a1]">Références : {section.reference}</p> : null}
-          </section>
-        ))}
+            </section>
+          ) : null}
 
-        {sheet.distinctions ? (
-          <section className="mb-7 rounded-2xl border border-[#ffd665]/35 bg-[#fff9e4] p-4">
-            <h4 className="text-sm font-bold uppercase tracking-[0.16em] text-[#8c7125]">Distinctions à maîtriser</h4>
-            <ul className="mt-3 space-y-2 text-[13px] leading-5 text-[#5e5a49]">
-              {sheet.distinctions.map((item) => <li key={item} className="flex gap-2"><span className="text-[#d2a62f]">—</span><span>{item}</span></li>)}
-            </ul>
-          </section>
-        ) : null}
+          {sheet.recall ? (
+            <section className="mb-7 rounded-2xl border border-[#ff8c6b]/20 bg-[#fff1ec] p-4">
+              <h4 className="text-sm font-bold uppercase tracking-[0.16em] text-[#b65f43]">Rappel actif</h4>
+              <p className="mt-1 text-xs leading-5 text-[#826458]">Ferme la fiche et réponds sans regarder.</p>
+              <ol className="mt-3 space-y-3 text-[13px] leading-5 text-[#624f48]">
+                {sheet.recall.map((question, index) => <li key={question}><span className="mr-2 font-bold text-[#d16b4a]">{index + 1}.</span>{question}</li>)}
+              </ol>
+              {sheet.quiz ? (
+                <button
+                  type="button"
+                  onClick={() => setMode("quiz")}
+                  className="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-[#e67552] px-4 py-2 text-sm font-semibold text-white shadow-sm"
+                >
+                  <Brain className="h-4 w-4" /> Lancer le test actif
+                </button>
+              ) : null}
+            </section>
+          ) : null}
 
-        {sheet.recall ? (
-          <section className="mb-7 rounded-2xl border border-[#ff8c6b]/20 bg-[#fff1ec] p-4">
-            <h4 className="text-sm font-bold uppercase tracking-[0.16em] text-[#b65f43]">Rappel actif</h4>
-            <p className="mt-1 text-xs leading-5 text-[#826458]">Ferme la fiche et réponds sans regarder.</p>
-            <ol className="mt-3 space-y-3 text-[13px] leading-5 text-[#624f48]">
-              {sheet.recall.map((question, index) => <li key={question}><span className="mr-2 font-bold text-[#d16b4a]">{index + 1}.</span>{question}</li>)}
-            </ol>
-          </section>
-        ) : null}
-
-        {!sheet.sections ? (
-          <div className="rounded-2xl border border-dashed border-[#566ff5]/18 bg-[#f8faff] p-5">
-            <p className="text-sm leading-6 text-[#62758b]">Cette ressource de démonstration n'a pas encore de contenu détaillé intégré au lecteur Focus.</p>
-            <Link href="/fiches" className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#566ff5] px-4 py-2 text-sm font-semibold text-white">
-              <BookOpen className="h-4 w-4" /> Ouvrir la bibliothèque complète
-            </Link>
-          </div>
-        ) : null}
-      </article>
+          {!sheet.sections ? (
+            <div className="rounded-2xl border border-dashed border-[#566ff5]/18 bg-[#f8faff] p-5">
+              <p className="text-sm leading-6 text-[#62758b]">Cette ressource de démonstration n'a pas encore de contenu détaillé intégré au lecteur Focus.</p>
+              <Link href="/fiches" className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#566ff5] px-4 py-2 text-sm font-semibold text-white">
+                <BookOpen className="h-4 w-4" /> Ouvrir la bibliothèque complète
+              </Link>
+            </div>
+          ) : null}
+        </article>
+      )}
     </div>
   );
 }
