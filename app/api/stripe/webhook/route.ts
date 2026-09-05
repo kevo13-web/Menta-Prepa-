@@ -52,6 +52,7 @@ export async function POST(request: Request) {
     const subscription = event.data.object as Stripe.Subscription;
     const userId = subscription.metadata.user_id;
     const plan = subscription.metadata.plan ?? "gratuit";
+    const periodEnd = subscription.items.data[0]?.current_period_end;
 
     if (userId) {
       await supabase.from("profiles").update({
@@ -59,7 +60,7 @@ export async function POST(request: Request) {
         stripe_subscription_id: subscription.id,
         subscription_status: subscription.status,
         plan: event.type === "customer.subscription.deleted" ? "gratuit" : plan,
-        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
         updated_at: new Date().toISOString(),
       }).eq("id", userId);
     }
