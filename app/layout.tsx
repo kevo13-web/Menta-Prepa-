@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
+import { PomodoroProvider } from "@/components/PomodoroProvider";
 
 export const metadata: Metadata = {
   title: "Menta Prépa | Stratégie mentale du travail étudiant",
@@ -17,9 +18,11 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body>
-        <Navbar />
-        <main>{children}</main>
-        <Footer />
+        <PomodoroProvider>
+          <Navbar />
+          <main>{children}</main>
+          <Footer />
+        </PomodoroProvider>
       </body>
     </html>
   );
