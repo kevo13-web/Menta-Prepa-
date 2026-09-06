@@ -22,7 +22,7 @@ export default async function CursusPage({ searchParams }: CursusPageProps) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("study_type, study_track, school_level, specialties")
+    .select("study_type, study_track, school_level, specialties, study_options")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -42,7 +42,7 @@ export default async function CursusPage({ searchParams }: CursusPageProps) {
             </div>
           </div>
 
-          <p className="mt-4 text-sm leading-6 text-[#6b7d90]">Ce cursus est utilisé automatiquement par le Planning IA, les recommandations et les prochaines fonctions de personnalisation. Tu peux le modifier ici si tu changes d’année ou de filière.</p>
+          <p className="mt-4 text-sm leading-6 text-[#6b7d90]">Ce cursus est utilisé automatiquement par le Planning IA, les recommandations et les prochaines fonctions de personnalisation. En CPGE, Menta mémorise aussi ta voie exacte, tes options, ta spécialité et tes langues.</p>
 
           {params.error ? <p className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{params.error}</p> : null}
 
@@ -52,6 +52,7 @@ export default async function CursusPage({ searchParams }: CursusPageProps) {
               defaultTrack={profile?.study_track}
               defaultSchoolLevel={profile?.school_level}
               defaultSpecialties={Array.isArray(profile?.specialties) ? profile.specialties : []}
+              defaultStudyOptions={Array.isArray(profile?.study_options) ? profile.study_options : []}
             />
             <button type="submit" className="min-h-12 rounded-2xl bg-[#566ff5] px-5 py-3 text-sm font-bold text-white shadow-[0_12px_30px_rgba(86,111,245,.22)] transition hover:-translate-y-0.5 hover:bg-[#465de4]">
               Enregistrer mon cursus
