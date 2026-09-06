@@ -65,6 +65,16 @@ export async function signIn(formData: FormData) {
     redirect(`/auth?error=${encodeURIComponent(error.message)}`);
   }
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("study_type")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (!profile?.study_type) redirect("/account/cursus");
+  }
+
   redirect("/dashboard");
 }
 
