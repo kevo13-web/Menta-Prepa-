@@ -73,12 +73,6 @@ function todayIndex(date = new Date()) {
   return (date.getDay() + 6) % 7;
 }
 
-function isToday(day: Day, now = new Date()) {
-  const explicit = planDayDate(day);
-  if (explicit) return explicit === localDateKey(now);
-  return dayIndex[day.day.toLowerCase()] === todayIndex(now);
-}
-
 function timeMinutes(value: string) {
   const match = String(value || "").match(/(\d{1,2})\s*[:hH]\s*(\d{2})?/);
   if (!match) return 24 * 60;
@@ -130,7 +124,19 @@ export function DailyPlanningPanel() {
     return () => { cancelled = true; };
   }, []);
 
-  const today = useMemo(() => saved?.plan?.days?.find((day) => isToday(day)) || null, [saved]);
+  const today = useMemo(() => {
+    const days = saved?.plan?.days || [];
+    if (!days.length) return null;
+
+    const now = new Date();
+    const exactDate = localDateKey(now);
+    const exactMatch = days.find((day) => planDayDate(day) === exactDate);
+    if (exactMatch) return exactMatch;
+
+    const currentWeekday = todayIndex(now);
+    return days.find((day) => dayIndex[day.day.toLowerCase()] === currentWeekday) || null;
+  }, [saved]);
+
   const completed = useMemo(() => new Set(saved?.completedIds || []), [saved]);
   const tasks = useMemo(
     () => (today?.blocks || []).filter(isWork).sort((a, b) => timeMinutes(a.time) - timeMinutes(b.time)),
