@@ -129,14 +129,15 @@ export async function POST(request: Request) {
   if ((saved.completedIds || []).includes(blockId)) return NextResponse.json({ error: "BLOCK_COMPLETED" }, { status: 409 });
 
   let sourceIndex = -1;
-  let sourceBlock: Block | null = null;
-  saved.plan.days.forEach((day, index) => {
-    const found = day.blocks.find((block) => block.id === blockId);
+  let sourceBlock: Block | undefined;
+  for (let index = 0; index < saved.plan.days.length; index += 1) {
+    const found = saved.plan.days[index].blocks.find((block) => block.id === blockId);
     if (found) {
       sourceIndex = index;
       sourceBlock = found;
+      break;
     }
-  });
+  }
 
   if (!sourceBlock || sourceIndex < 0) return NextResponse.json({ error: "BLOCK_NOT_FOUND" }, { status: 404 });
   if (sourceBlock.type === "cours" || sourceBlock.type === "repos") return NextResponse.json({ error: "BLOCK_LOCKED" }, { status: 409 });
