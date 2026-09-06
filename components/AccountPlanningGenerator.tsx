@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { GraduationCap, Sparkles } from "lucide-react";
-import { PlanningGenerator } from "@/components/PlanningGenerator";
+import { PersonalizedPlanningGenerator } from "@/components/PersonalizedPlanningGenerator";
 import { createClient } from "@/lib/supabase/client";
 import { studyTypeLabel, type StudyTypeKey } from "@/data/frenchStudyPrograms";
 import { suggestedSubjectsForProfile } from "@/data/academicSubjectSuggestions";
@@ -77,16 +77,11 @@ export function AccountPlanningGenerator() {
             </div>
           </div>
 
-          <PlanningGenerator />
+          <PersonalizedPlanningGenerator profile={profile} />
         </>
       ) : (
         <div className="rounded-[1.8rem] border border-[#566ff5]/12 bg-white/75 p-6 text-sm text-[#6f8296] shadow-sm">Menta charge ton profil académique…</div>
       )}
-      <style jsx global>{`
-        .account-planning-generator aside > div > div.grid > section:first-child {
-          display: none !important;
-        }
-      `}</style>
     </div>
   );
 }
