@@ -77,12 +77,7 @@ export function AccountPlanningGenerator() {
             </div>
           </div>
 
-          <PlanningGenerator
-            userId={profile.user_id}
-            defaultStudyType={(profile.study_type as StudyTypeKey | null) || undefined}
-            defaultTrack={profile.study_track || profile.school_level || ""}
-            defaultSubjects={suggestedSubjects}
-          />
+          <PlanningGenerator />
         </>
       ) : (
         <div className="rounded-[1.8rem] border border-[#566ff5]/12 bg-white/75 p-6 text-sm text-[#6f8296] shadow-sm">Menta charge ton profil académique…</div>
