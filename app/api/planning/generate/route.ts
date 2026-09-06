@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { studyTypeLabel, type StudyTypeKey } from "@/data/frenchStudyPrograms";
 
 export const runtime = "nodejs";
 
@@ -81,11 +82,32 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Requête invalide" }, { status: 400 });
   }
 
-  const studyType = clean(body.studyType, 180) || "Études supérieures";
-  const track = clean(body.track, 260) || clean(body.level, 200) || "Filière non précisée";
-  const subjects = Array.isArray(body.subjects)
-    ? body.subjects.map((item) => clean(item, 120)).filter(Boolean).slice(0, 20)
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("study_type, study_track, school_level, specialties")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const profileStudyType = clean(profile?.study_type, 80);
+  const profileSpecialties = Array.isArray(profile?.specialties)
+    ? profile.specialties.map((item: unknown) => clean(item, 180)).filter(Boolean).slice(0, 12)
     : [];
+  const profileTrackParts = Array.from(new Set([
+    clean(profile?.school_level, 180),
+    clean(profile?.study_track, 260),
+  ].filter(Boolean)));
+
+  const studyType = profileStudyType
+    ? studyTypeLabel(profileStudyType as StudyTypeKey)
+    : clean(body.studyType, 180) || "Études supérieures";
+  const track = profileTrackParts.length
+    ? profileTrackParts.join(" · ")
+    : clean(body.track, 260) || clean(body.level, 200) || "Filière non précisée";
+
+  const bodySubjects = Array.isArray(body.subjects)
+    ? body.subjects.map((item) => clean(item, 120)).filter(Boolean)
+    : [];
+  const subjects = Array.from(new Set([...bodySubjects, ...profileSpecialties])).slice(0, 30);
   const courseHours = clean(body.courseHours, 9000);
   const freeHours = clean(body.freeHours);
   const deadlines = clean(body.deadlines);
@@ -126,26 +148,27 @@ export async function POST(request: Request) {
 
 Règles impératives :
 1. Respecte strictement l'emploi du temps et les indisponibilités : ne place aucun bloc de travail sur un créneau occupé.
-2. Adapte la méthode au type d'études et à la filière. Une CPGE, une licence de droit, un BUT, un BTS, une école d'ingénieurs ou un cursus de médecine n'ont pas les mêmes exercices, rythmes ni priorités.
-3. Priorise d'abord les échéances proches, puis les matières faibles/importantes, puis l'entretien régulier.
-4. Adapte la charge au niveau de fatigue. Fatigue 4 ou 5 = réduction nette du volume, davantage de récupération et aucun surmenage tardif.
-5. Utilise rappel actif, répétition espacée, correction d'erreurs, sujets blancs, exercices, annales, plans, oral, flashcards ou fichage uniquement quand ils sont pertinents pour le cursus.
-6. Les blocs de travail durent en général 25 à 120 minutes. Évite les journées absurdes ou surchargées.
-7. Prévois de vraies marges de récupération. Le repos est un outil de performance, pas un bloc décoratif.
-8. Chaque bloc doit avoir un objectif concret et vérifiable, jamais une formule vague comme « travailler l'histoire ».
-9. Répartis les tâches difficiles aux moments les plus favorables parmi les disponibilités fournies.
-10. Si les disponibilités sont imprécises, reste prudent et choisis des horaires plausibles sans prétendre connaître ce qui n'a pas été fourni.
-11. Produis les sept jours de lundi à dimanche. Les jours peuvent être très légers s'il n'y a rien d'utile à ajouter.
-12. Dans reason, explique brièvement pourquoi ce bloc est placé à cet endroit.
-13. Tu as accès à la bibliothèque personnelle Menta de l'étudiant et à son niveau de maîtrise pour chaque fiche. Exploite ces données activement au lieu de les ignorer.
-14. Une fiche à moins de 50% de maîtrise est une faiblesse forte : si elle est pertinente pour les matières, l'objectif ou une échéance, programme du rappel actif puis, lorsque la semaine le permet, une seconde exposition espacée 24 à 72 heures plus tard.
-15. Une fiche entre 50% et 79% mérite une consolidation ciblée. Une fiche à 80% ou plus ne doit être entretenue que si elle est liée à une échéance, un objectif prioritaire ou un besoin de réactivation.
-16. Ne programme pas mécaniquement toutes les fiches faibles : croise toujours maîtrise, pertinence, échéances, temps disponible et fatigue.
-17. Quand un bloc utilise explicitement une fiche de la bibliothèque, reprends son titre exact ou une formulation immédiatement reconnaissable et renseigne son ID exact dans sheet_id. Sinon sheet_id doit être une chaîne vide.
-18. N'invente jamais une fiche, un score de maîtrise, une échéance ou un lien entre une fiche et un examen qui n'est pas justifié par les données fournies.
-19. Réponds uniquement dans le JSON imposé, en français.`;
+2. Adapte la méthode au cursus enregistré dans le compte. Un lycéen de seconde, un élève de première ou terminale avec ses spécialités, une CPGE, une licence de droit, un BUT, un BTS, une école d'ingénieurs ou un cursus de médecine n'ont pas les mêmes exercices, rythmes ni priorités.
+3. Pour un lycéen, tiens compte de sa classe, de sa voie et de ses spécialités réelles. Ne traite jamais une spécialité non suivie comme une matière prioritaire.
+4. Priorise d'abord les échéances proches, puis les matières faibles/importantes, puis l'entretien régulier.
+5. Adapte la charge au niveau de fatigue. Fatigue 4 ou 5 = réduction nette du volume, davantage de récupération et aucun surmenage tardif.
+6. Utilise rappel actif, répétition espacée, correction d'erreurs, sujets blancs, exercices, annales, plans, oral, flashcards ou fichage uniquement quand ils sont pertinents pour le cursus.
+7. Les blocs de travail durent en général 25 à 120 minutes. Évite les journées absurdes ou surchargées.
+8. Prévois de vraies marges de récupération. Le repos est un outil de performance, pas un bloc décoratif.
+9. Chaque bloc doit avoir un objectif concret et vérifiable, jamais une formule vague comme « travailler l'histoire ».
+10. Répartis les tâches difficiles aux moments les plus favorables parmi les disponibilités fournies.
+11. Si les disponibilités sont imprécises, reste prudent et choisis des horaires plausibles sans prétendre connaître ce qui n'a pas été fourni.
+12. Produis les sept jours de lundi à dimanche. Les jours peuvent être très légers s'il n'y a rien d'utile à ajouter.
+13. Dans reason, explique brièvement pourquoi ce bloc est placé à cet endroit.
+14. Tu as accès à la bibliothèque personnelle Menta de l'étudiant et à son niveau de maîtrise pour chaque fiche. Exploite ces données activement au lieu de les ignorer.
+15. Une fiche à moins de 50% de maîtrise est une faiblesse forte : si elle est pertinente pour les matières, l'objectif ou une échéance, programme du rappel actif puis, lorsque la semaine le permet, une seconde exposition espacée 24 à 72 heures plus tard.
+16. Une fiche entre 50% et 79% mérite une consolidation ciblée. Une fiche à 80% ou plus ne doit être entretenue que si elle est liée à une échéance, un objectif prioritaire ou un besoin de réactivation.
+17. Ne programme pas mécaniquement toutes les fiches faibles : croise toujours maîtrise, pertinence, échéances, temps disponible et fatigue.
+18. Quand un bloc utilise explicitement une fiche de la bibliothèque, reprends son titre exact ou une formulation immédiatement reconnaissable et renseigne son ID exact dans sheet_id. Sinon sheet_id doit être une chaîne vide.
+19. N'invente jamais une fiche, un score de maîtrise, une échéance ou un lien entre une fiche et un examen qui n'est pas justifié par les données fournies.
+20. Réponds uniquement dans le JSON imposé, en français.`;
 
-  const input = `SEMAINE DE RÉFÉRENCE\n${weekAnchor}\n\nTYPE D'ÉTUDES\n${studyType}\n\nFILIÈRE / ANNÉE\n${track}\n\nMATIÈRES\n${subjects.join(", ")}\n\nEMPLOI DU TEMPS / CONTRAINTES FIXES\n${courseHours || "Non précisés"}\n\nDISPONIBILITÉS DE TRAVAIL\n${freeHours}\n\nÉCHÉANCES\n${deadlines || "Aucune échéance indiquée"}\n\nFATIGUE\n${fatigue}/5\n\nSTYLE DE TRAVAIL\n${workStyle}\n\nOBJECTIF HEBDOMADAIRE\n${goal}\n\nBIBLIOTHÈQUE MENTA ET MAÎTRISE\n${libraryContext}`;
+  const input = `SEMAINE DE RÉFÉRENCE\n${weekAnchor}\n\nTYPE D'ÉTUDES\n${studyType}\n\nFILIÈRE / ANNÉE\n${track}\n\nSPÉCIALITÉS DU PROFIL\n${profileSpecialties.length ? profileSpecialties.join(", ") : "Aucune spécialité enregistrée"}\n\nMATIÈRES\n${subjects.join(", ")}\n\nEMPLOI DU TEMPS / CONTRAINTES FIXES\n${courseHours || "Non précisés"}\n\nDISPONIBILITÉS DE TRAVAIL\n${freeHours}\n\nÉCHÉANCES\n${deadlines || "Aucune échéance indiquée"}\n\nFATIGUE\n${fatigue}/5\n\nSTYLE DE TRAVAIL\n${workStyle}\n\nOBJECTIF HEBDOMADAIRE\n${goal}\n\nBIBLIOTHÈQUE MENTA ET MAÎTRISE\n${libraryContext}`;
 
   try {
     const response = await fetch("https://api.openai.com/v1/responses", {
