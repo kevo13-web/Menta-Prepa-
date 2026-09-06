@@ -17,6 +17,7 @@ import {
   cpgeFamilies,
   getCpgeProgramByLabel,
   getCpgePrograms,
+  normalizeCpgeTrack,
   type CpgeOptionGroup,
 } from "@/data/cpgePrograms";
 
@@ -42,14 +43,21 @@ export function CurriculumFields({
     : "lycee";
 
   const allCpgePrograms = useMemo(() => getCpgePrograms(), []);
-  const defaultCpgeProgram = getCpgeProgramByLabel(defaultTrack || "");
+  const normalizedDefaultCpgeTrack = normalizedType === "cpge" ? normalizeCpgeTrack(defaultTrack) : "";
+  const defaultCpgeProgram = getCpgeProgramByLabel(normalizedDefaultCpgeTrack);
+  const initialCpgeTrack = normalizedDefaultCpgeTrack || allCpgePrograms.find((program) => program.family === "Littéraire")?.label || "";
+  const initialTrack = normalizedType === "cpge" ? initialCpgeTrack : (defaultTrack || "");
+  const initialLocalOption = (defaultStudyOptions || [])
+    .find((item) => item.startsWith("Option locale · "))
+    ?.replace(/^Option locale · /, "") || "";
+  const initialStudyOptions = (defaultStudyOptions || []).filter((item) => !item.startsWith("Option locale · "));
 
   const [studyType, setStudyType] = useState<StudyTypeKey>(normalizedType);
   const [schoolLevel, setSchoolLevel] = useState(defaultSchoolLevel || "Seconde générale et technologique");
-  const [track, setTrack] = useState(defaultTrack || "");
+  const [track, setTrack] = useState(initialTrack);
   const [specialties, setSpecialties] = useState<string[]>(defaultSpecialties || []);
-  const [studyOptions, setStudyOptions] = useState<string[]>(defaultStudyOptions || []);
-  const [localOption, setLocalOption] = useState("");
+  const [studyOptions, setStudyOptions] = useState<string[]>(initialStudyOptions);
+  const [localOption, setLocalOption] = useState(initialLocalOption);
   const [cpgeFamily, setCpgeFamily] = useState<(typeof cpgeFamilies)[number]>(defaultCpgeProgram?.family || "Littéraire");
 
   const suggestions = useMemo(() => getTrackSuggestions(studyType), [studyType]);
@@ -185,7 +193,7 @@ export function CurriculumFields({
             <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[#566ff5]" />
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.13em] text-[#5267d9]">Menta connaît ta prépa exacte</p>
-              <p className="mt-1 text-[11px] leading-5 text-[#718397]">Voie, année, option scientifique ou juridique, spécialité de khâgne, langues et options locales : ces données serviront au Planning IA et aux recommandations.</p>
+              <p className="mt-1 text-[11px] leading-5 text-[#718397]">Voie, année, options, spécialité de khâgne et langues : Menta conserve le profil académique qui correspond réellement à ta classe.</p>
             </div>
           </div>
 
@@ -197,6 +205,10 @@ export function CurriculumFields({
           </label>
           <input type="hidden" name="study_track" value={track} />
 
+          {defaultTrack && normalizedType === "cpge" && normalizedDefaultCpgeTrack && defaultTrack !== normalizedDefaultCpgeTrack ? (
+            <p className="mt-2 rounded-xl bg-[#edf1ff] px-3 py-2 text-[10px] leading-4 text-[#5267d9]">Ton ancien intitulé de prépa a été automatiquement rapproché de la nouvelle nomenclature Menta. Vérifie simplement les options ci-dessous.</p>
+          ) : null}
+
           {cpgeProgram?.note ? <p className="mt-2 rounded-xl bg-[#fff8df] px-3 py-2 text-[10px] leading-4 text-[#8c742e]">{cpgeProgram.note}</p> : null}
 
           {cpgeProgram?.optionGroups?.map((group) => {
@@ -206,7 +218,7 @@ export function CurriculumFields({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-sm font-semibold text-[#334d68]">{group.label}</p>
                   <span className="rounded-full bg-[#edf1ff] px-2.5 py-1 text-[10px] font-bold text-[#5267d9]">
-                    {group.mode === "single" ? "1 choix" : group.max ? `${selectedInGroup.length}/${group.max} max.` : `${selectedInGroup.length} sélectionnée(s)`}
+                    {group.mode === "single" ? (group.min ? "1 choix requis" : "facultatif") : group.min === group.max ? `${selectedInGroup.length}/${group.max} requis` : group.max ? `${selectedInGroup.length}/${group.max} max.` : `${selectedInGroup.length} sélectionnée(s)`}
                   </span>
                 </div>
                 {group.help ? <p className="mt-1 text-[10px] leading-4 text-[#8291a0]">{group.help}</p> : null}
@@ -229,7 +241,7 @@ export function CurriculumFields({
           <label className="mt-5 grid gap-2 border-t border-[#dfe5ef] pt-4 text-sm font-semibold text-[#334d68]">
             Option locale ou particularité de ton lycée <span className="font-normal text-[#8493a3]">(facultatif)</span>
             <input name="local_study_option" value={localOption} onChange={(event) => setLocalOption(event.target.value)} className={fieldClass} placeholder="Ex. préparation Chartes B, LV rare, option spécifique proposée par mon lycée…" />
-            <span className="text-[10px] font-normal leading-4 text-[#8291a0]">Si ton établissement propose quelque chose de plus spécifique que la nomenclature nationale, Menta le mémorise aussi.</span>
+            <span className="text-[10px] font-normal leading-4 text-[#8291a0]">La réglementation est nationale, mais l’offre d’options varie réellement selon les lycées : Menta te laisse donc enregistrer aussi ton cas précis.</span>
           </label>
         </div>
       ) : null}
