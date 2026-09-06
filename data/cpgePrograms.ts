@@ -12,43 +12,45 @@ export type CpgeProgram = {
   id: string;
   label: string;
   family: "Littéraire" | "Économique et commerciale" | "Scientifique" | "Arts et design" | "ATS";
-  year: "1re année" | "2e année" | "1 an";
+  year: "1re année" | "2e année" | "3e année" | "1 an";
   optionGroups?: CpgeOptionGroup[];
   note?: string;
 };
 
-const languageNames = [
-  "Anglais",
+const ensLanguages = [
   "Allemand",
-  "Espagnol",
-  "Italien",
+  "Anglais",
   "Arabe",
   "Chinois",
+  "Espagnol",
   "Grec moderne",
   "Hébreu",
+  "Italien",
   "Japonais",
   "Polonais",
   "Portugais",
   "Russe",
-  "Autre langue proposée par mon lycée",
 ];
 
+const languageNames = [...ensLanguages, "Autre langue proposée par mon lycée"];
+
+function single(id: string, label: string, options: string[], required = true, help?: string): CpgeOptionGroup {
+  return { id, label, mode: "single", min: required ? 1 : 0, max: 1, options, help };
+}
+
+function multiple(id: string, label: string, options: string[], min = 0, max?: number, help?: string): CpgeOptionGroup {
+  return { id, label, mode: "multiple", min, max, options, help };
+}
+
 function languageGroup(id: string, label: string, prefix: string, required: boolean): CpgeOptionGroup {
-  return {
-    id,
-    label,
-    mode: "single",
-    min: required ? 1 : 0,
-    max: 1,
-    options: languageNames.map((language) => `${prefix} · ${language}`),
-  };
+  return single(id, label, languageNames.map((language) => `${prefix} · ${language}`), required);
 }
 
 const lvaRequired = () => languageGroup("lva", "Langue vivante A", "LVA", true);
 const lvbRequired = () => languageGroup("lvb", "Langue vivante B", "LVB", true);
 const lvbOptional = () => ({
-  ...languageGroup("lvb", "Langue vivante B (facultative selon la filière / le lycée)", "LVB", false),
-  help: "L’offre de LVB varie selon les établissements. Ne la sélectionne que si tu la suis réellement.",
+  ...languageGroup("lvb", "Langue vivante B", "LVB", false),
+  help: "Facultative ou dispensable dans certaines voies ; sélectionne-la seulement si tu la suis réellement.",
 });
 
 const hypokhagneComplements = [
@@ -59,6 +61,7 @@ const hypokhagneComplements = [
   "Complément · Latin confirmé",
   "Complément · Grec débutant",
   "Complément · Grec confirmé",
+  "Option artistique · Arts plastiques",
   "Option artistique · Cinéma-audiovisuel",
   "Option artistique · Théâtre",
   "Option artistique · Musique",
@@ -70,43 +73,103 @@ const khagneLyonSpecialties = [
   "Spécialité · Lettres classiques",
   "Spécialité · Philosophie",
   "Spécialité · Histoire et géographie",
-  "Spécialité langue vivante · Anglais",
   "Spécialité langue vivante · Allemand",
+  "Spécialité langue vivante · Anglais",
   "Spécialité langue vivante · Arabe",
   "Spécialité langue vivante · Chinois",
   "Spécialité langue vivante · Espagnol",
-  "Spécialité langue vivante · Grec moderne",
-  "Spécialité langue vivante · Hébreu",
   "Spécialité langue vivante · Italien",
-  "Spécialité langue vivante · Japonais",
-  "Spécialité langue vivante · Polonais",
-  "Spécialité langue vivante · Portugais",
   "Spécialité langue vivante · Russe",
-  "Spécialité arts · Études cinématographiques",
-  "Spécialité arts · Études théâtrales",
+  "Spécialité arts · Arts plastiques",
+  "Spécialité arts · Cinéma et audiovisuel",
+  "Spécialité arts · Théâtre",
   "Spécialité arts · Musique",
-  "Spécialité arts · Histoire et théorie des arts",
+  "Spécialité arts · Histoire des arts",
 ];
 
 const khagneUlmOptions = [
-  "Option concours · Lettres classiques / version latine et thème",
-  "Option concours · Philosophie",
-  "Option concours · Lettres modernes / commentaire littéraire français",
-  "Option concours · Géographie",
-  "Option concours · Histoire",
-  "Option concours · Langue vivante / littérature étrangère",
-  "Option concours · Langue vivante / version et thème",
-  "Option concours · Histoire de la musique",
-  "Option concours · Histoire et théorie des arts",
-  "Option concours · Études cinématographiques",
-  "Option concours · Études théâtrales",
+  "Option concours A/L · Version latine et court thème",
+  "Option concours A/L · Commentaire d’un texte philosophique",
+  "Option concours A/L · Commentaire d’un texte littéraire français",
+  "Option concours A/L · Composition de géographie",
+  "Option concours A/L · Histoire",
+  ...ensLanguages.map((language) => `Option concours A/L · Littérature étrangère · ${language}`),
+  ...ensLanguages.map((language) => `Option concours A/L · Version et thème · ${language}`),
+  "Option concours A/L · Histoire de la musique",
+  "Option concours A/L · Histoire et théorie des arts",
+  "Option concours A/L · Études cinématographiques",
+  "Option concours A/L · Études théâtrales",
 ];
 
 const saintCyrOptions = [
   "Option obligatoire · Mathématiques",
-  "Option obligatoire · Langue ancienne",
-  "Option obligatoire · LVC",
+  "Option obligatoire · Latin",
+  "Option obligatoire · LVC arabe",
+  "Option obligatoire · LVC russe",
 ];
+
+function ecg(year: "1re année" | "2e année", id: string): CpgeProgram {
+  return {
+    id,
+    label: `${year} — ECG`,
+    family: "Économique et commerciale",
+    year,
+    optionGroups: [
+      single(`${id}-maths`, "Option de mathématiques", ["Mathématiques approfondies", "Mathématiques appliquées"]),
+      single(`${id}-shs`, "Option de sciences humaines et sociales", [
+        "ESH · Économie, sociologie et histoire du monde contemporain",
+        "HGG · Histoire, géographie et géopolitique du monde contemporain",
+      ], true, "Les deux choix forment les quatre parcours nationaux possibles de la voie ECG."),
+      lvaRequired(),
+      lvbRequired(),
+    ],
+  };
+}
+
+function d1(year: "1re année" | "2e année", id: string): CpgeProgram {
+  return {
+    id,
+    label: `${year} — D1 Droit, économie, management`,
+    family: "Économique et commerciale",
+    year,
+    optionGroups: [
+      single(`${id}-option`, "Enseignement optionnel", ["Droit commercial", "Droit public", "Mathématiques appliquées et statistiques"]),
+      lvbRequired(),
+    ],
+    note: "L’anglais appartient au programme commun de D1 ; la LVB et l’enseignement optionnel sont enregistrés séparément.",
+  };
+}
+
+function d2(year: "1re année" | "2e année", id: string): CpgeProgram {
+  return {
+    id,
+    label: `${year} — D2 Économie et gestion`,
+    family: "Économique et commerciale",
+    year,
+    optionGroups: [
+      single(`${id}-option`, "Enseignement optionnel", ["Dominante gestion", "Histoire des faits économiques"]),
+      lvaRequired(),
+    ],
+  };
+}
+
+function simpleScience(id: string, label: string, year: "1re année" | "2e année"): CpgeProgram {
+  return { id, label, family: "Scientifique", year, optionGroups: [lvaRequired(), lvbOptional()] };
+}
+
+function secondYearScience(id: string, label: string, withMpOption = false): CpgeProgram {
+  return {
+    id,
+    label,
+    family: "Scientifique",
+    year: "2e année",
+    optionGroups: [
+      ...(withMpOption ? [single(`${id}-option`, "Option scientifique", ["Option informatique", "Option SII"])] : []),
+      lvaRequired(),
+      lvbOptional(),
+    ],
+  };
+}
 
 const cpgePrograms: CpgeProgram[] = [
   {
@@ -116,25 +179,13 @@ const cpgePrograms: CpgeProgram[] = [
     year: "1re année",
     optionGroups: [
       lvaRequired(),
-      lvbRequired(),
-      {
-        id: "ancient-language",
-        label: "Langue ancienne du tronc commun",
-        mode: "single",
-        min: 1,
-        max: 1,
-        options: ["Latin · débutant", "Latin · confirmé", "Grec · débutant", "Grec · confirmé"],
-        help: "Une langue ancienne est obligatoire en hypokhâgne A/L ; elle peut être commencée en CPGE.",
-      },
-      {
-        id: "hk-complements",
-        label: "Enseignements complémentaires suivis",
-        mode: "multiple",
-        max: 5,
-        options: hypokhagneComplements,
-        help: "Les compléments réellement ouverts changent d’un lycée à l’autre. Sélectionne uniquement ceux de ton établissement.",
-      },
+      lvbOptional(),
+      single("hk-ancient", "Langue ancienne du tronc commun", ["Latin · débutant", "Latin · confirmé", "Grec · débutant", "Grec · confirmé"], true,
+        "Une langue ancienne est obligatoire en hypokhâgne ; elle peut être commencée en CPGE."),
+      multiple("hk-complements", "Enseignements complémentaires réellement suivis", hypokhagneComplements, 0, 6,
+        "L’offre varie fortement selon les établissements ; ne sélectionne que les enseignements de ton lycée."),
     ],
+    note: "En hypokhâgne A/L, la LVB peut être dispensée lorsque l’étudiant suit suffisamment d’enseignements optionnels.",
   },
   {
     id: "lettres-lyon-2",
@@ -142,29 +193,16 @@ const cpgePrograms: CpgeProgram[] = [
     family: "Littéraire",
     year: "2e année",
     optionGroups: [
-      {
-        id: "lyon-specialty",
-        label: "Spécialité de khâgne",
-        mode: "single",
-        min: 1,
-        max: 1,
-        options: khagneLyonSpecialties,
-        help: "Menta distingue la série officielle de l’ENS Lyon et la spécialité précise réellement préparée dans ton lycée.",
-      },
+      single("lyon-specialty", "Spécialité de khâgne", khagneLyonSpecialties, true,
+        "Cette liste reprend les spécialités actuellement répertoriées pour la khâgne ENS Lyon ; l’ouverture concrète dépend du lycée."),
       lvaRequired(),
       lvbOptional(),
-      {
-        id: "lyon-extra",
-        label: "Enseignements complémentaires",
-        mode: "multiple",
-        max: 4,
-        options: [
-          "Complément · Latin",
-          "Complément · Grec",
-          "Complément · LVB approfondie",
-          "Préparation complémentaire · École nationale des chartes section B",
-        ],
-      },
+      multiple("lyon-extra", "Enseignements / préparations complémentaires", [
+        "Complément · Latin",
+        "Complément · Grec",
+        "Complément · LVB approfondie",
+        "Préparation complémentaire · École nationale des chartes section B",
+      ], 0, 4),
     ],
   },
   {
@@ -174,35 +212,16 @@ const cpgePrograms: CpgeProgram[] = [
     year: "2e année",
     optionGroups: [
       lvaRequired(),
-      {
-        id: "ulm-ancient-language",
-        label: "Langue et culture anciennes",
-        mode: "single",
-        min: 1,
-        max: 1,
-        options: ["Latin", "Grec"],
-        help: "La khâgne Ulm conserve une langue ancienne dans le cursus commun.",
-      },
-      {
-        id: "ulm-option",
-        label: "Épreuve à option préparée au concours A/L",
-        mode: "single",
-        min: 1,
-        max: 1,
-        options: khagneUlmOptions,
-      },
+      single("ulm-ancient", "Langue et culture anciennes", ["Latin", "Grec"]),
+      single("ulm-option", "Épreuve écrite à option A/L préparée", khagneUlmOptions, true,
+        "Les intitulés suivent la réglementation du concours ENS Paris-PSL mise à jour en 2026, y compris les intitulés applicables à la session 2027."),
       lvbOptional(),
-      {
-        id: "ulm-extra",
-        label: "Préparations complémentaires",
-        mode: "multiple",
-        max: 3,
-        options: [
-          "Préparation complémentaire · Histoire ancienne",
-          "Préparation complémentaire · Histoire médiévale / moderne",
-          "Préparation complémentaire · École nationale des chartes section B",
-        ],
-      },
+      multiple("ulm-extra", "Préparations complémentaires", [
+        "Préparation complémentaire · Histoire ancienne",
+        "Préparation complémentaire · Histoire médiévale",
+        "Préparation complémentaire · Histoire moderne",
+        "Préparation complémentaire · École nationale des chartes section B",
+      ], 0, 4),
     ],
   },
   {
@@ -212,21 +231,14 @@ const cpgePrograms: CpgeProgram[] = [
     year: "1re année",
     optionGroups: [
       lvaRequired(),
-      {
-        id: "bl-options-1",
-        label: "Deux enseignements à option préparés",
-        mode: "multiple",
-        min: 2,
-        max: 2,
-        options: [
-          "Option B/L · Latin",
-          "Option B/L · Grec",
-          "Option B/L · Géographie",
-          "Option B/L · LVB",
-          "Option B/L · Sciences sociales",
-        ],
-        help: "La B/L articule les options aux concours visés ; l’offre concrète dépend du lycée.",
-      },
+      multiple("bl-options-1", "Deux choix préparés en vue des concours", [
+        "Option B/L · Latin",
+        "Option B/L · Grec",
+        "Option B/L · Géographie",
+        "Option B/L · Deuxième langue",
+        "Option B/L · Sciences sociales",
+      ], 2, 2, "La B/L prévoit deux choix parmi ces cinq domaines en vue des concours."),
+      single("bl-lva-civilisation-1", "Civilisation renforcée en LVA", ["Civilisation renforcée en LVA"], false),
       lvbOptional(),
     ],
   },
@@ -237,20 +249,14 @@ const cpgePrograms: CpgeProgram[] = [
     year: "2e année",
     optionGroups: [
       lvaRequired(),
-      {
-        id: "bl-options-2",
-        label: "Deux enseignements à option préparés",
-        mode: "multiple",
-        min: 2,
-        max: 2,
-        options: [
-          "Option B/L · Latin",
-          "Option B/L · Grec",
-          "Option B/L · Géographie",
-          "Option B/L · LVB",
-          "Option B/L · Sciences sociales",
-        ],
-      },
+      multiple("bl-options-2", "Deux choix préparés en vue des concours", [
+        "Option B/L · Latin",
+        "Option B/L · Grec",
+        "Option B/L · Géographie",
+        "Option B/L · Deuxième langue",
+        "Option B/L · Sciences sociales",
+      ], 2, 2),
+      single("bl-lva-civilisation-2", "Civilisation renforcée en LVA", ["Civilisation renforcée en LVA"], false),
       lvbOptional(),
     ],
   },
@@ -261,16 +267,12 @@ const cpgePrograms: CpgeProgram[] = [
     year: "1re année",
     optionGroups: [
       lvaRequired(),
-      {
-        id: "chartes-ancient-1",
-        label: "Langues anciennes travaillées",
-        mode: "multiple",
-        min: 1,
-        max: 2,
-        options: ["Chartes A · Latin", "Chartes A · Grec ancien"],
-      },
+      single("chartes-a-classics-1", "Choix en langues anciennes", [
+        "Section A · Thème latin",
+        "Section A · Version grecque",
+      ], true, "Le latin (version) appartient au cursus de section A ; le choix porte notamment sur thème latin ou version grecque."),
     ],
-    note: "La section A est une préparation très spécialisée en histoire et langues anciennes ; seules quelques classes dédiées existent en France.",
+    note: "La section A est une préparation spécialisée en histoire et langues anciennes ; quelques établissements seulement l’ouvrent.",
   },
   {
     id: "chartes-a-2",
@@ -279,39 +281,59 @@ const cpgePrograms: CpgeProgram[] = [
     year: "2e année",
     optionGroups: [
       lvaRequired(),
-      {
-        id: "chartes-ancient-2",
-        label: "Langues anciennes travaillées",
-        mode: "multiple",
-        min: 1,
-        max: 2,
-        options: ["Chartes A · Latin", "Chartes A · Grec ancien"],
-      },
+      single("chartes-a-classics-2", "Choix en langues anciennes", ["Section A · Thème latin", "Section A · Version grecque"]),
     ],
   },
   {
-    id: "chartes-b",
-    label: "2e année — Préparation Chartes section B (adossée à une khâgne)",
+    id: "chartes-b-1",
+    label: "1re année — Chartes section B",
+    family: "Littéraire",
+    year: "1re année",
+    optionGroups: [
+      lvaRequired(),
+      single("chartes-b-written-1", "Option principale de section B", [
+        "Chartes B · Version latine",
+        "Chartes B · Version grecque",
+        "Chartes B · Géographie",
+        "Chartes B · Histoire des arts",
+      ]),
+      lvbOptional(),
+    ],
+    note: "Certains lycées, notamment Pierre-de-Fermat, préparent directement les sections A et B dès la première année.",
+  },
+  {
+    id: "chartes-b-2",
+    label: "2e année — Chartes section B",
     family: "Littéraire",
     year: "2e année",
     optionGroups: [
       lvaRequired(),
-      {
-        id: "chartes-b-written-option",
-        label: "Option écrite Chartes B",
-        mode: "single",
-        min: 1,
-        max: 1,
-        options: [
-          "Chartes B · Version latine",
-          "Chartes B · Version grecque",
-          "Chartes B · Géographie",
-          "Chartes B · Histoire des arts",
-        ],
-      },
+      single("chartes-b-written-2", "Option principale de section B", [
+        "Chartes B · Version latine",
+        "Chartes B · Version grecque",
+        "Chartes B · Géographie",
+        "Chartes B · Histoire des arts",
+      ]),
+      single("chartes-b-second-2", "Complément de section B", ["Chartes B · LVB", "Chartes B · Histoire médiévale"], false),
       lvbOptional(),
     ],
-    note: "La préparation à la section B est souvent proposée comme option au sein d’une khâgne A/L ou Lyon, plutôt que comme une classe autonome.",
+  },
+  {
+    id: "chartes-b-khagne",
+    label: "2e année — Préparation Chartes section B adossée à une khâgne",
+    family: "Littéraire",
+    year: "2e année",
+    optionGroups: [
+      lvaRequired(),
+      single("chartes-b-khagne-written", "Option principale de section B", [
+        "Chartes B · Version latine",
+        "Chartes B · Version grecque",
+        "Chartes B · Géographie",
+        "Chartes B · Histoire des arts",
+      ]),
+      lvbOptional(),
+    ],
+    note: "Cette préparation peut être suivie au sein d’une khâgne Ulm ou Lyon sans constituer une classe autonome.",
   },
   {
     id: "saint-cyr-lettres-1",
@@ -321,16 +343,9 @@ const cpgePrograms: CpgeProgram[] = [
     optionGroups: [
       lvaRequired(),
       lvbRequired(),
-      {
-        id: "saint-cyr-options-1",
-        label: "Enseignement optionnel obligatoire",
-        mode: "single",
-        min: 1,
-        max: 1,
-        options: saintCyrOptions,
-      },
+      single("saint-cyr-option-1", "Matière optionnelle obligatoire", saintCyrOptions),
     ],
-    note: "Pour la préparation Saint-Cyr lettres, l’anglais doit être suivi en LVA ou en LVB ; l’offre précise de LVC et langue ancienne dépend du lycée militaire.",
+    note: "L’anglais doit être suivi en LVA ou en LVB. L’option est mathématiques, latin ou LVC (arabe/russe selon l’offre).",
   },
   {
     id: "saint-cyr-lettres-2",
@@ -340,121 +355,53 @@ const cpgePrograms: CpgeProgram[] = [
     optionGroups: [
       lvaRequired(),
       lvbRequired(),
-      {
-        id: "saint-cyr-options-2",
-        label: "Enseignement optionnel obligatoire",
-        mode: "single",
-        min: 1,
-        max: 1,
-        options: saintCyrOptions,
-      },
+      single("saint-cyr-option-2", "Matière optionnelle obligatoire", saintCyrOptions),
     ],
-    note: "Pour la préparation Saint-Cyr lettres, l’anglais doit être suivi en LVA ou en LVB.",
+    note: "L’anglais doit être suivi en LVA ou en LVB.",
   },
-  {
-    id: "ecg-1",
-    label: "1re année — ECG",
-    family: "Économique et commerciale",
-    year: "1re année",
-    optionGroups: [
-      {
-        id: "ecg-maths-1",
-        label: "Option de mathématiques",
-        mode: "single",
-        min: 1,
-        max: 1,
-        options: ["Mathématiques approfondies", "Mathématiques appliquées"],
-      },
-      {
-        id: "ecg-humanities-1",
-        label: "Option de sciences humaines et sociales",
-        mode: "single",
-        min: 1,
-        max: 1,
-        options: ["ESH · Économie, sociologie et histoire du monde contemporain", "HGG · Histoire, géographie et géopolitique du monde contemporain"],
-        help: "Ces deux choix forment les quatre parcours officiels de la voie ECG.",
-      },
-      lvaRequired(),
-      lvbRequired(),
-    ],
-  },
-  {
-    id: "ecg-2",
-    label: "2e année — ECG",
-    family: "Économique et commerciale",
-    year: "2e année",
-    optionGroups: [
-      {
-        id: "ecg-maths-2",
-        label: "Option de mathématiques",
-        mode: "single",
-        min: 1,
-        max: 1,
-        options: ["Mathématiques approfondies", "Mathématiques appliquées"],
-      },
-      {
-        id: "ecg-humanities-2",
-        label: "Option de sciences humaines et sociales",
-        mode: "single",
-        min: 1,
-        max: 1,
-        options: ["ESH · Économie, sociologie et histoire du monde contemporain", "HGG · Histoire, géographie et géopolitique du monde contemporain"],
-      },
-      lvaRequired(),
-      lvbRequired(),
-    ],
-  },
+
+  ecg("1re année", "ecg-1"),
+  ecg("2e année", "ecg-2"),
   { id: "ect-1", label: "1re année — ECT", family: "Économique et commerciale", year: "1re année", optionGroups: [lvaRequired(), lvbRequired()] },
   { id: "ect-2", label: "2e année — ECT", family: "Économique et commerciale", year: "2e année", optionGroups: [lvaRequired(), lvbRequired()] },
   {
-    id: "d1-1",
-    label: "1re année — D1 Droit, économie, management",
+    id: "ect-bacpro-1",
+    label: "1re année du dispositif bac professionnel — ECT",
     family: "Économique et commerciale",
     year: "1re année",
-    optionGroups: [
-      { id: "d1-option-1", label: "Enseignement optionnel", mode: "single", min: 1, max: 1, options: ["Droit commercial", "Droit public", "Mathématiques appliquées et statistiques"] },
-      lvbRequired(),
-    ],
-    note: "L’anglais fait partie du programme commun de D1 ; une LVB est également suivie.",
+    optionGroups: [lvaRequired(), lvbOptional()],
+    note: "Dispositif ECT en trois ans réservé à certains bacheliers professionnels tertiaires.",
   },
   {
-    id: "d1-2",
-    label: "2e année — D1 Droit, économie, management",
+    id: "ect-bacpro-2",
+    label: "2e année du dispositif bac professionnel — ECT",
     family: "Économique et commerciale",
     year: "2e année",
-    optionGroups: [
-      { id: "d1-option-2", label: "Enseignement optionnel", mode: "single", min: 1, max: 1, options: ["Droit commercial", "Droit public", "Mathématiques appliquées et statistiques"] },
-      lvbRequired(),
-    ],
-    note: "L’anglais fait partie du programme commun de D1 ; une LVB est également suivie.",
+    optionGroups: [lvaRequired(), lvbOptional()],
   },
   {
-    id: "d2-1",
-    label: "1re année — D2 Économie et gestion",
+    id: "ect-bacpro-3",
+    label: "3e année du dispositif bac professionnel — ECT",
     family: "Économique et commerciale",
-    year: "1re année",
-    optionGroups: [
-      { id: "d2-option-1", label: "Enseignement optionnel", mode: "single", min: 1, max: 1, options: ["Gestion", "Histoire des faits économiques"] },
-      lvaRequired(),
-    ],
+    year: "3e année",
+    optionGroups: [lvaRequired(), lvbRequired()],
   },
-  {
-    id: "d2-2",
-    label: "2e année — D2 Économie et gestion",
-    family: "Économique et commerciale",
-    year: "2e année",
-    optionGroups: [
-      { id: "d2-option-2", label: "Enseignement optionnel", mode: "single", min: 1, max: 1, options: ["Gestion", "Histoire des faits économiques"] },
-      lvaRequired(),
-    ],
-  },
+  d1("1re année", "d1-1"),
+  d1("2e année", "d1-2"),
+  d2("1re année", "d2-1"),
+  d2("2e année", "d2-2"),
+
   {
     id: "mpsi",
     label: "1re année — MPSI",
     family: "Scientifique",
     year: "1re année",
     optionGroups: [
-      { id: "mpsi-option", label: "Choix du 2e semestre", mode: "single", min: 1, max: 1, options: ["Sans option · orientation MP/MP*", "Option informatique · orientation MP/MP*", "Option SII · orientation MP/MP* ou PSI/PSI*"] },
+      single("mpsi-option", "Choix à l’issue du 1er semestre", [
+        "Sans option · orientation MP/MP*",
+        "Option informatique · orientation MP/MP*",
+        "Option SII · orientation MP/MP* ou PSI/PSI*",
+      ]),
       lvaRequired(),
       lvbOptional(),
     ],
@@ -465,7 +412,10 @@ const cpgePrograms: CpgeProgram[] = [
     family: "Scientifique",
     year: "1re année",
     optionGroups: [
-      { id: "mp2i-option", label: "Choix du 2e semestre", mode: "single", min: 1, max: 1, options: ["Option sciences informatiques · orientation MPI/MPI*", "Option SII · orientation MP/MP* ou PSI/PSI*"] },
+      single("mp2i-option", "Option du 2e semestre", [
+        "Option sciences informatiques · orientation MPI/MPI*",
+        "Option SII · orientation MP/MP* ou PSI/PSI*",
+      ]),
       lvaRequired(),
       lvbOptional(),
     ],
@@ -476,7 +426,10 @@ const cpgePrograms: CpgeProgram[] = [
     family: "Scientifique",
     year: "1re année",
     optionGroups: [
-      { id: "pcsi-option", label: "Choix du 2e semestre", mode: "single", min: 1, max: 1, options: ["Option physique-chimie · orientation PC/PC*", "Option physique-SII · orientation PSI/PSI*"] },
+      single("pcsi-option", "Option à l’issue du 1er semestre", [
+        "Option physique et chimie · orientation PC/PC*",
+        "Option physique et sciences de l’ingénieur · orientation PSI/PSI*",
+      ]),
       lvaRequired(),
       lvbOptional(),
     ],
@@ -487,57 +440,101 @@ const cpgePrograms: CpgeProgram[] = [
     family: "Scientifique",
     year: "1re année",
     optionGroups: [
-      { id: "ptsi-option", label: "Module du 2e semestre", mode: "single", min: 1, max: 1, options: ["Module mathématiques · orientation PSI/PSI* possible", "Sans module mathématiques supplémentaire · orientation PT/PT*"] },
+      single("ptsi-module", "Module à l’issue du 1er semestre", [
+        "Module mathématiques · orientation PSI/PSI* possible",
+        "Sans module mathématiques supplémentaire · orientation PT/PT*",
+      ]),
       lvaRequired(),
       lvbOptional(),
     ],
   },
-  { id: "bcpst-1", label: "1re année — BCPST", family: "Scientifique", year: "1re année", optionGroups: [lvaRequired(), lvbOptional()] },
-  { id: "bcpst-2", label: "2e année — BCPST", family: "Scientifique", year: "2e année", optionGroups: [lvaRequired(), lvbOptional()] },
-  { id: "tsi-1", label: "1re année — TSI", family: "Scientifique", year: "1re année", optionGroups: [lvaRequired(), lvbOptional()] },
-  { id: "tsi-2", label: "2e année — TSI", family: "Scientifique", year: "2e année", optionGroups: [lvaRequired(), lvbOptional()] },
-  { id: "tpc-1", label: "1re année — TPC", family: "Scientifique", year: "1re année", optionGroups: [lvaRequired(), lvbOptional()] },
-  { id: "tpc-2", label: "2e année — TPC", family: "Scientifique", year: "2e année", optionGroups: [lvaRequired(), lvbOptional()] },
-  { id: "tb-1", label: "1re année — TB", family: "Scientifique", year: "1re année", optionGroups: [lvaRequired(), lvbOptional()] },
-  { id: "tb-2", label: "2e année — TB", family: "Scientifique", year: "2e année", optionGroups: [lvaRequired(), lvbOptional()] },
+  simpleScience("bcpst-1", "1re année — BCPST", "1re année"),
+  simpleScience("bcpst-2", "2e année — BCPST", "2e année"),
+  simpleScience("tsi-1", "1re année — TSI", "1re année"),
+  simpleScience("tsi-2", "2e année — TSI", "2e année"),
   {
-    id: "mp-2",
-    label: "2e année — MP",
+    id: "tsi-bacpro-1",
+    label: "1re année du dispositif bac professionnel — TSI",
     family: "Scientifique",
-    year: "2e année",
-    optionGroups: [
-      { id: "mp-option", label: "Option scientifique", mode: "single", min: 1, max: 1, options: ["Option informatique", "Option SII"] },
-      lvaRequired(),
-      lvbOptional(),
-    ],
+    year: "1re année",
+    optionGroups: [lvaRequired(), lvbOptional()],
+    note: "Dispositif TSI en trois ans destiné à certains bacheliers professionnels industriels.",
   },
-  {
-    id: "mp-star-2",
-    label: "2e année — MP*",
-    family: "Scientifique",
-    year: "2e année",
-    optionGroups: [
-      { id: "mp-star-option", label: "Option scientifique", mode: "single", min: 1, max: 1, options: ["Option informatique", "Option SII"] },
-      lvaRequired(),
-      lvbOptional(),
-    ],
-  },
-  { id: "mpi-2", label: "2e année — MPI", family: "Scientifique", year: "2e année", optionGroups: [lvaRequired(), lvbOptional()] },
-  { id: "mpi-star-2", label: "2e année — MPI*", family: "Scientifique", year: "2e année", optionGroups: [lvaRequired(), lvbOptional()] },
-  { id: "pc-2", label: "2e année — PC", family: "Scientifique", year: "2e année", optionGroups: [lvaRequired(), lvbOptional()] },
-  { id: "pc-star-2", label: "2e année — PC*", family: "Scientifique", year: "2e année", optionGroups: [lvaRequired(), lvbOptional()] },
-  { id: "psi-2", label: "2e année — PSI", family: "Scientifique", year: "2e année", optionGroups: [lvaRequired(), lvbOptional()] },
-  { id: "psi-star-2", label: "2e année — PSI*", family: "Scientifique", year: "2e année", optionGroups: [lvaRequired(), lvbOptional()] },
-  { id: "pt-2", label: "2e année — PT", family: "Scientifique", year: "2e année", optionGroups: [lvaRequired(), lvbOptional()] },
-  { id: "pt-star-2", label: "2e année — PT*", family: "Scientifique", year: "2e année", optionGroups: [lvaRequired(), lvbOptional()] },
+  { id: "tsi-bacpro-2", label: "2e année du dispositif bac professionnel — TSI", family: "Scientifique", year: "2e année", optionGroups: [lvaRequired(), lvbOptional()] },
+  { id: "tsi-bacpro-3", label: "3e année du dispositif bac professionnel — TSI", family: "Scientifique", year: "3e année", optionGroups: [lvaRequired(), lvbOptional()] },
+  simpleScience("tpc-1", "1re année — TPC", "1re année"),
+  simpleScience("tpc-2", "2e année — TPC", "2e année"),
+  simpleScience("tb-1", "1re année — TB", "1re année"),
+  simpleScience("tb-2", "2e année — TB", "2e année"),
+  secondYearScience("mp-2", "2e année — MP", true),
+  secondYearScience("mp-star-2", "2e année — MP*", true),
+  secondYearScience("mpi-2", "2e année — MPI"),
+  secondYearScience("mpi-star-2", "2e année — MPI*"),
+  secondYearScience("pc-2", "2e année — PC"),
+  secondYearScience("pc-star-2", "2e année — PC*"),
+  secondYearScience("psi-2", "2e année — PSI"),
+  secondYearScience("psi-star-2", "2e année — PSI*"),
+  secondYearScience("pt-2", "2e année — PT"),
+  secondYearScience("pt-star-2", "2e année — PT*"),
+
   { id: "arts-design-1", label: "1re année — Arts et design", family: "Arts et design", year: "1re année", optionGroups: [lvaRequired()] },
   { id: "arts-design-2", label: "2e année — Arts et design", family: "Arts et design", year: "2e année", optionGroups: [lvaRequired()] },
-  { id: "ats-eco", label: "ATS — Économie-gestion", family: "ATS", year: "1 an", optionGroups: [lvaRequired()] },
-  { id: "ats-indus", label: "ATS — Ingénierie industrielle", family: "ATS", year: "1 an", optionGroups: [lvaRequired()] },
-  { id: "ats-gc", label: "ATS — Génie civil", family: "ATS", year: "1 an", optionGroups: [lvaRequired()] },
-  { id: "ats-chimie", label: "ATS — Métiers de la chimie", family: "ATS", year: "1 an", optionGroups: [lvaRequired()] },
-  { id: "ats-bio", label: "ATS — Biologie", family: "ATS", year: "1 an", optionGroups: [lvaRequired()] },
-  { id: "ats-horti", label: "ATS — Métiers de l’horticulture et du paysage", family: "ATS", year: "1 an", optionGroups: [lvaRequired()] },
+
+  {
+    id: "ats-eco",
+    label: "ATS — Économie-gestion",
+    family: "ATS",
+    year: "1 an",
+    optionGroups: [
+      single("ats-eco-option", "Enseignement optionnel", [
+        "Culture économique",
+        "Gestion-comptabilité",
+        "Marketing",
+        "Approfondissement en droit",
+        "Calcul et raisonnement",
+      ]),
+    ],
+    note: "L’anglais appartient au programme commun ; l’enseignement optionnel représente 1 h 30 hebdomadaire.",
+  },
+  {
+    id: "ats-indus",
+    label: "ATS — Ingénierie industrielle",
+    family: "ATS",
+    year: "1 an",
+    note: "Prépa post-BTS/BUT scientifique à dominante ingénierie industrielle.",
+  },
+  {
+    id: "ats-gc",
+    label: "ATS — Génie civil",
+    family: "ATS",
+    year: "1 an",
+    note: "Prépa post-BTS/BUT orientée génie civil, bâtiment, travaux publics et domaines proches.",
+  },
+  {
+    id: "ats-chimie",
+    label: "ATS — Métiers de la chimie",
+    family: "ATS",
+    year: "1 an",
+    optionGroups: [
+      single("ats-chimie-parcours", "Parcours", ["Parcours chimie", "Parcours génie des procédés"]),
+    ],
+  },
+  {
+    id: "agro-veto-post-bts",
+    label: "Classe Agro-Véto post-BTSA et BTS",
+    family: "ATS",
+    year: "1 an",
+    optionGroups: [
+      single("agro-veto-orientation", "Orientation du 2d semestre", ["Orientation ingénieur", "Orientation vétérinaire"], false,
+        "La partie orientée du second semestre dépend du concours réussi ; renseigne-la uniquement si elle est déjà déterminée."),
+    ],
+  },
+  {
+    id: "ats-horti",
+    label: "ATS — Métiers de l’horticulture et du paysage",
+    family: "ATS",
+    year: "1 an",
+  },
 ];
 
 export const cpgeFamilies = ["Littéraire", "Économique et commerciale", "Scientifique", "Arts et design", "ATS"] as const;
@@ -566,6 +563,7 @@ const legacyTrackMap: Record<string, string> = {
   "TPC 2e année": "2e année — TPC",
   "TB 2e année": "2e année — TB",
   "ATS — adaptation techniciens supérieurs": "ATS — Ingénierie industrielle",
+  "ATS — Biologie": "Classe Agro-Véto post-BTSA et BTS",
 };
 
 export function getCpgePrograms() {
