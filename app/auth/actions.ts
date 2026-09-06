@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { studyTypeOptions, type StudyTypeKey } from "@/data/frenchStudyPrograms";
 import { lyceeGeneralSpecialties, lyceeSchoolLevels } from "@/data/lyceePrograms";
+import { allowedOptionsForCpgeTrack, getCpgeProgramByLabel, isKnownCpgeTrack } from "@/data/cpgePrograms";
 
 function siteUrl() {
   if (process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL) {
@@ -20,10 +21,16 @@ function curriculumFromForm(formData: FormData) {
   const specialties = Array.from(new Set(
     formData.getAll("specialties").map((value) => String(value).trim()).filter(Boolean),
   ));
+  const submittedStudyOptions = Array.from(new Set(
+    formData.getAll("study_options").map((value) => String(value).trim()).filter(Boolean),
+  ));
+  const localStudyOption = String(formData.get("local_study_option") ?? "").trim().slice(0, 220);
 
   if (!studyTypeOptions.some((item) => item.value === studyType)) {
     throw new Error("Choisis ton type d’études.");
   }
+
+  let studyOptions: string[] = [];
 
   if (studyType === "lycee") {
     if (!lyceeSchoolLevels.includes(schoolLevel as (typeof lyceeSchoolLevels)[number])) {
@@ -42,6 +49,32 @@ function curriculumFromForm(formData: FormData) {
     if (schoolLevel === "Seconde générale et technologique" && specialties.length > 3) {
       throw new Error("En seconde, tu peux indiquer au maximum 3 spécialités envisagées.");
     }
+  } else if (studyType === "cpge") {
+    if (!studyTrack || !isKnownCpgeTrack(studyTrack)) {
+      throw new Error("Choisis précisément ta classe préparatoire.");
+    }
+
+    const program = getCpgeProgramByLabel(studyTrack);
+    const allowed = allowedOptionsForCpgeTrack(studyTrack);
+    if (submittedStudyOptions.some((item) => !allowed.has(item))) {
+      throw new Error("Une option CPGE sélectionnée n’est pas reconnue pour cette filière.");
+    }
+
+    for (const group of program?.optionGroups || []) {
+      const selected = submittedStudyOptions.filter((item) => group.options.includes(item));
+      if (group.min && selected.length < group.min) {
+        throw new Error(`Complète « ${group.label} » pour que Menta connaisse réellement ton cursus.`);
+      }
+      if (group.max && selected.length > group.max) {
+        throw new Error(`Trop de choix ont été sélectionnés dans « ${group.label} ».`);
+      }
+      if (group.mode === "single" && selected.length > 1) {
+        throw new Error(`Choisis une seule réponse dans « ${group.label} ».`);
+      }
+    }
+
+    studyOptions = [...submittedStudyOptions];
+    if (localStudyOption) studyOptions.push(`Option locale · ${localStudyOption}`);
   } else if (!studyTrack) {
     throw new Error("Précise ta filière et ton année.");
   }
@@ -51,6 +84,7 @@ function curriculumFromForm(formData: FormData) {
     studyTrack,
     schoolLevel: studyType === "lycee" ? schoolLevel : "",
     specialties: studyType === "lycee" ? specialties : [],
+    studyOptions,
   };
 }
 
@@ -63,16 +97,6 @@ export async function signIn(formData: FormData) {
 
   if (error) {
     redirect(`/auth?error=${encodeURIComponent(error.message)}`);
-  }
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("study_type")
-      .eq("id", user.id)
-      .maybeSingle();
-    if (!profile?.study_type) redirect("/account/cursus");
   }
 
   redirect("/dashboard");
@@ -100,6 +124,7 @@ export async function signUp(formData: FormData) {
         study_track: curriculum.studyTrack,
         school_level: curriculum.schoolLevel,
         specialties: curriculum.specialties,
+        study_options: curriculum.studyOptions,
       },
     },
   });
@@ -130,6 +155,7 @@ export async function updateCurriculum(formData: FormData) {
       study_track: curriculum.studyTrack,
       school_level: curriculum.schoolLevel || null,
       specialties: curriculum.specialties,
+      study_options: curriculum.studyOptions,
       updated_at: new Date().toISOString(),
     })
     .eq("id", user.id);
