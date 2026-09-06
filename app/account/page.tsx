@@ -24,7 +24,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("email, full_name, plan, subscription_status, current_period_end, stripe_customer_id, study_type, study_track, school_level, specialties")
+    .select("email, full_name, plan, subscription_status, current_period_end, stripe_customer_id, study_type, study_track, school_level, specialties, study_options")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -36,6 +36,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
 
   const studyType = profile?.study_type as StudyTypeKey | null;
   const specialties = Array.isArray(profile?.specialties) ? profile.specialties : [];
+  const studyOptions = Array.isArray(profile?.study_options) ? profile.study_options : [];
 
   return (
     <section className="px-4 pb-24 pt-32 sm:px-6 lg:px-8">
@@ -77,20 +78,28 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
 
           <div className="rounded-[26px] border border-[#566ff5]/14 bg-gradient-to-br from-[#edf1ff] via-white to-[#e8fbf5] p-6 shadow-sm md:col-span-2">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-3">
                   <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-[#566ff5] shadow-sm"><GraduationCap className="h-5 w-5" /></span>
                   <div><p className="text-sm text-muted">Cursus</p><h2 className="font-serif text-2xl text-frost">{studyType ? studyTypeLabel(studyType) : "À compléter"}</h2></div>
                 </div>
                 {studyType ? (
-                  <div className="mt-5 space-y-2 text-sm text-[#5f7489]">
+                  <div className="mt-5 space-y-3 text-sm text-[#5f7489]">
                     {profile?.school_level ? <p><strong className="text-[#294762]">Classe :</strong> {profile.school_level}</p> : null}
                     {profile?.study_track ? <p><strong className="text-[#294762]">Filière :</strong> {profile.study_track}</p> : null}
                     {specialties.length ? <p><strong className="text-[#294762]">Spécialités :</strong> {specialties.join(" · ")}</p> : null}
+                    {studyOptions.length ? (
+                      <div>
+                        <strong className="text-[#294762]">Options / langues :</strong>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {studyOptions.map((option) => <span key={option} className="rounded-full border border-[#566ff5]/12 bg-white/80 px-2.5 py-1 text-xs font-medium text-[#5a6f86]">{option}</span>)}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 ) : <p className="mt-4 text-sm text-[#6d8094]">Ajoute ton cursus pour que Menta personnalise automatiquement le Planning IA.</p>}
               </div>
-              <Link href="/account/cursus" className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-[#566ff5] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#465de4]">
+              <Link href="/account/cursus" className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-2xl bg-[#566ff5] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#465de4]">
                 {studyType ? "Modifier mon cursus" : "Compléter mon cursus"}
               </Link>
             </div>
