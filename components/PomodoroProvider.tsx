@@ -1,284 +1,276 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { FocusAudioEngine, type FocusCue } from "@/lib/focus/audio";
+import {
+  POMODORO_DEFAULTS,
+  advancePomodoroClock,
+  clamp,
+  nextPomodoroPhase,
+  sanitizePomodoroSettings,
+  minutesForPomodoroPhase,
+  type PomodoroClock,
+  type PomodoroPhase,
+  type PomodoroSettings,
+} from "@/lib/focus/clock";
 
-export const POMODORO_DEFAULTS = {
-  work: 25,
-  shortBreak: 5,
-  longBreak: 15,
-  longBreakEvery: 4,
-};
+export { POMODORO_DEFAULTS, minutesForPomodoroPhase, formatPomodoroTime } from "@/lib/focus/clock";
+export type { PomodoroPhase, PomodoroSettings } from "@/lib/focus/clock";
 
-export type PomodoroPhase = "work" | "shortBreak" | "longBreak";
-export type PomodoroSettings = typeof POMODORO_DEFAULTS;
+export type FocusAudioSettings = { enabled: boolean; warningSeconds: number; volume: number };
+export type FocusAnnouncement = { id: number; message: string; kind: "warning" | "transition" };
 
-type PersistedState = {
-  settings: PomodoroSettings;
-  phase: PomodoroPhase;
-  secondsLeft: number;
-  running: boolean;
-  completed: number;
-  endAt: number | null;
-};
-
-type PomodoroContextValue = PersistedState & {
+export type PomodoroContextValue = PomodoroClock & {
   ready: boolean;
+  audioSettings: FocusAudioSettings;
+  audioReady: boolean;
+  announcement: FocusAnnouncement | null;
+  countdown: number | null;
   start: () => void;
   pause: () => void;
   reset: () => void;
   skip: () => void;
   updateSetting: (key: keyof PomodoroSettings, value: number) => void;
+  updateAudioSetting: (key: keyof FocusAudioSettings, value: boolean | number) => void;
+  enableAudio: () => Promise<boolean>;
+  testAudio: () => Promise<boolean>;
 };
 
 const STORAGE_KEY = "menta-pomodoro-state-v2";
 const LEGACY_SETTINGS_KEY = "menta-pomodoro-settings";
-
+const AUDIO_KEY = "menta-pomodoro-audio-v1";
+const AUDIO_DEFAULTS: FocusAudioSettings = { enabled: true, warningSeconds: 10, volume: 45 };
 const PomodoroContext = createContext<PomodoroContextValue | null>(null);
 
-function clamp(value: number, min: number, max: number) {
-  if (Number.isNaN(value)) return min;
-  return Math.min(max, Math.max(min, value));
-}
-
-export function minutesForPomodoroPhase(phase: PomodoroPhase, settings: PomodoroSettings) {
-  if (phase === "work") return settings.work;
-  if (phase === "shortBreak") return settings.shortBreak;
-  return settings.longBreak;
-}
-
-export function formatPomodoroTime(totalSeconds: number) {
-  const safeSeconds = Math.max(0, Math.round(totalSeconds));
-  const minutes = Math.floor(safeSeconds / 60);
-  const seconds = safeSeconds % 60;
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-}
-
-function sanitizeSettings(value?: Partial<PomodoroSettings>): PomodoroSettings {
+function sanitizeAudio(value?: Partial<FocusAudioSettings>): FocusAudioSettings {
+  const warning = Number(value?.warningSeconds ?? 10);
   return {
-    work: clamp(Number(value?.work ?? POMODORO_DEFAULTS.work), 5, 120),
-    shortBreak: clamp(Number(value?.shortBreak ?? POMODORO_DEFAULTS.shortBreak), 1, 30),
-    longBreak: clamp(Number(value?.longBreak ?? POMODORO_DEFAULTS.longBreak), 5, 60),
-    longBreakEvery: clamp(Number(value?.longBreakEvery ?? POMODORO_DEFAULTS.longBreakEvery), 2, 8),
+    enabled: value?.enabled !== false,
+    warningSeconds: [0, 3, 5, 10, 15, 30].includes(warning) ? warning : 10,
+    volume: clamp(Number(value?.volume ?? 45), 0, 100),
   };
 }
 
-function nextPhase(phase: PomodoroPhase, completed: number, settings: PomodoroSettings) {
-  if (phase === "work") {
-    const nextCompleted = completed + 1;
-    return {
-      phase: nextCompleted % settings.longBreakEvery === 0 ? ("longBreak" as const) : ("shortBreak" as const),
-      completed: nextCompleted,
-    };
-  }
-
-  return { phase: "work" as const, completed };
-}
-
-function syncExpiredState(
-  phase: PomodoroPhase,
-  completed: number,
-  endAt: number,
-  settings: PomodoroSettings,
-  now: number,
-) {
-  let nextEndAt = endAt;
-  let nextCurrentPhase = phase;
-  let nextCompleted = completed;
-  let transitions = 0;
-
-  while (now >= nextEndAt && transitions < 500) {
-    const next = nextPhase(nextCurrentPhase, nextCompleted, settings);
-    nextCurrentPhase = next.phase;
-    nextCompleted = next.completed;
-    nextEndAt += minutesForPomodoroPhase(nextCurrentPhase, settings) * 60_000;
-    transitions += 1;
-  }
-
-  return {
-    phase: nextCurrentPhase,
-    completed: nextCompleted,
-    endAt: nextEndAt,
-    secondsLeft: Math.max(1, Math.ceil((nextEndAt - now) / 1000)),
-    transitioned: transitions > 0,
-  };
-}
-
-function playBell() {
-  try {
-    const AudioContextClass =
-      window.AudioContext ||
-      (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AudioContextClass) return;
-
-    const context = new AudioContextClass();
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(740, context.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(520, context.currentTime + 0.45);
-    gain.gain.setValueAtTime(0.0001, context.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.18, context.currentTime + 0.03);
-    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.7);
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start();
-    oscillator.stop(context.currentTime + 0.72);
-  } catch {
-    // Le chronomètre continue même lorsque l'audio est bloqué.
-  }
+function initialClock(): PomodoroClock {
+  return { settings: POMODORO_DEFAULTS, phase: "work", secondsLeft: 1500, running: false, completed: 0, endAt: null };
 }
 
 export function PomodoroProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<PomodoroSettings>(POMODORO_DEFAULTS);
-  const [phase, setPhase] = useState<PomodoroPhase>("work");
-  const [secondsLeft, setSecondsLeft] = useState(POMODORO_DEFAULTS.work * 60);
-  const [running, setRunning] = useState(false);
-  const [completed, setCompleted] = useState(0);
-  const [endAt, setEndAt] = useState<number | null>(null);
+  const [clock, setClock] = useState<PomodoroClock>(initialClock);
+  const clockRef = useRef(clock);
   const [ready, setReady] = useState(false);
+  const [audioSettings, setAudioSettings] = useState<FocusAudioSettings>(AUDIO_DEFAULTS);
+  const audioSettingsRef = useRef(audioSettings);
+  const audioRef = useRef<FocusAudioEngine | null>(null);
+  const [audioReady, setAudioReady] = useState(false);
+  const [announcement, setAnnouncement] = useState<FocusAnnouncement | null>(null);
+  const announcementId = useRef(0);
+  const warnedBoundary = useRef<number | null>(null);
+  const tickedSecond = useRef<string | null>(null);
+  const hydrated = useRef(false);
+
+  const commit = useCallback((next: PomodoroClock) => {
+    clockRef.current = next;
+    setClock(next);
+  }, []);
+
+  const announce = useCallback((message: string, kind: FocusAnnouncement["kind"]) => {
+    setAnnouncement({ id: ++announcementId.current, message, kind });
+  }, []);
+
+  const enableAudio = useCallback(async () => {
+    const engine = audioRef.current ?? new FocusAudioEngine();
+    audioRef.current = engine;
+    const ok = await engine.unlock();
+    setAudioReady(ok);
+    return ok;
+  }, []);
+
+  const play = useCallback((cue: FocusCue) => {
+    const options = audioSettingsRef.current;
+    if (!options.enabled) return;
+    const engine = audioRef.current;
+    if (!engine?.ready) {
+      setAudioReady(false);
+      return;
+    }
+    engine.play(cue, options.volume);
+  }, []);
+
+  const testAudio = useCallback(async () => {
+    const ok = await enableAudio();
+    if (ok) audioRef.current?.play("workStart", audioSettingsRef.current.volume);
+    return ok;
+  }, [enableAudio]);
 
   useEffect(() => {
-    let loadedSettings = POMODORO_DEFAULTS;
-
+    if (hydrated.current) return;
+    hydrated.current = true;
+    let loaded = initialClock();
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved) as Partial<PersistedState>;
-        loadedSettings = sanitizeSettings(parsed.settings);
-        const loadedPhase: PomodoroPhase =
-          parsed.phase === "shortBreak" || parsed.phase === "longBreak" ? parsed.phase : "work";
-        const loadedCompleted = Math.max(0, Math.floor(Number(parsed.completed ?? 0)));
-        const loadedRunning = Boolean(parsed.running && parsed.endAt);
-        const loadedEndAt = loadedRunning ? Number(parsed.endAt) : null;
-
-        setSettings(loadedSettings);
-        setPhase(loadedPhase);
-        setCompleted(loadedCompleted);
-
-        if (loadedRunning && loadedEndAt && Number.isFinite(loadedEndAt)) {
-          const synced = syncExpiredState(loadedPhase, loadedCompleted, loadedEndAt, loadedSettings, Date.now());
-          setPhase(synced.phase);
-          setCompleted(synced.completed);
-          setEndAt(synced.endAt);
-          setSecondsLeft(synced.secondsLeft);
-          setRunning(true);
-        } else {
-          const fallback = minutesForPomodoroPhase(loadedPhase, loadedSettings) * 60;
-          setSecondsLeft(clamp(Number(parsed.secondsLeft ?? fallback), 1, fallback));
-        }
+        const parsed = JSON.parse(saved) as Partial<PomodoroClock>;
+        const settings = sanitizePomodoroSettings(parsed.settings);
+        const phase: PomodoroPhase = parsed.phase === "shortBreak" || parsed.phase === "longBreak" ? parsed.phase : "work";
+        const completed = Math.max(0, Math.floor(Number(parsed.completed) || 0));
+        const fallback = minutesForPomodoroPhase(phase, settings) * 60;
+        const endAt = Number(parsed.endAt);
+        loaded = {
+          settings, phase, completed,
+          secondsLeft: clamp(Number(parsed.secondsLeft ?? fallback), 1, fallback),
+          running: Boolean(parsed.running && Number.isFinite(endAt) && endAt > 0),
+          endAt: parsed.running && Number.isFinite(endAt) && endAt > 0 ? endAt : null,
+        };
+        loaded = advancePomodoroClock(loaded, Date.now()).clock;
       } else {
         const legacy = window.localStorage.getItem(LEGACY_SETTINGS_KEY);
-        if (legacy) loadedSettings = sanitizeSettings(JSON.parse(legacy) as Partial<PomodoroSettings>);
-        setSettings(loadedSettings);
-        setSecondsLeft(loadedSettings.work * 60);
+        if (legacy) {
+          const settings = sanitizePomodoroSettings(JSON.parse(legacy) as Partial<PomodoroSettings>);
+          loaded = { ...loaded, settings, secondsLeft: settings.work * 60 };
+        }
       }
-    } catch {
-      setSettings(POMODORO_DEFAULTS);
-      setSecondsLeft(POMODORO_DEFAULTS.work * 60);
-    }
-
+    } catch { loaded = initialClock(); }
+    try {
+      const saved = window.localStorage.getItem(AUDIO_KEY);
+      if (saved) {
+        const options = sanitizeAudio(JSON.parse(saved) as Partial<FocusAudioSettings>);
+        audioSettingsRef.current = options;
+        setAudioSettings(options);
+      }
+    } catch { /* Keep the default sound preferences. */ }
+    commit(loaded);
     setReady(true);
-  }, []);
+  }, [commit]);
 
   useEffect(() => {
     if (!ready) return;
-    window.localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ settings, phase, secondsLeft, running, completed, endAt }),
-    );
-  }, [ready, settings, phase, secondsLeft, running, completed, endAt]);
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(clock)); } catch { /* Storage may be unavailable. */ }
+  }, [ready, clock]);
 
   useEffect(() => {
-    if (!running || !endAt) return;
+    if (!ready) return;
+    try { window.localStorage.setItem(AUDIO_KEY, JSON.stringify(audioSettings)); } catch { /* Storage may be unavailable. */ }
+  }, [ready, audioSettings]);
 
-    const sync = () => {
-      const now = Date.now();
-      if (now < endAt) {
-        setSecondsLeft(Math.max(1, Math.ceil((endAt - now) / 1000)));
-        return;
+  const tick = useCallback(() => {
+    const previous = clockRef.current;
+    if (!previous.running || previous.endAt === null) return;
+    const now = Date.now();
+    const result = advancePomodoroClock(previous, now);
+    const next = result.clock;
+    if (result.transitions) {
+      warnedBoundary.current = null;
+      tickedSecond.current = null;
+      announce(next.phase === "work" ? "La pause est terminée. C’est le moment de reprendre." : next.phase === "longBreak" ? "Grande pause : tu peux déconnecter quelques minutes." : "Pause courte : prends le temps de souffler.", "transition");
+      // Never replay a burst of old sounds after a suspended browser tab wakes.
+      if (result.transitions === 1 && result.lastBoundary !== null && now - result.lastBoundary < 2000) {
+        play(next.phase === "work" ? "workStart" : "breakStart");
       }
+    }
+    if (next.secondsLeft !== previous.secondsLeft || result.transitions) commit(next);
 
-      const synced = syncExpiredState(phase, completed, endAt, settings, now);
-      if (synced.transitioned) playBell();
-      setPhase(synced.phase);
-      setCompleted(synced.completed);
-      setEndAt(synced.endAt);
-      setSecondsLeft(synced.secondsLeft);
+    const options = audioSettingsRef.current;
+    if (!options.warningSeconds || !next.running || next.endAt === null) return;
+    const remaining = next.secondsLeft;
+    if (remaining > options.warningSeconds) return;
+    if (warnedBoundary.current !== next.endAt) {
+      warnedBoundary.current = next.endAt;
+      announce(next.phase === "work" ? `Pause dans ${remaining} secondes.` : `Reprise dans ${remaining} secondes.`, "warning");
+      // A late wake-up still displays the countdown, but does not play a late warning.
+      if (remaining >= 3 && !result.transitions) play("warning");
+    }
+    if (remaining <= 3 && remaining > 0) {
+      const key = `${next.endAt}:${remaining}`;
+      if (tickedSecond.current !== key) {
+        tickedSecond.current = key;
+        // Suppress catch-up pips if several seconds were skipped by the browser.
+        if (previous.endAt === next.endAt && previous.secondsLeft - remaining <= 1) play("tick");
+      }
+    }
+  }, [announce, commit, play]);
+
+  useEffect(() => {
+    if (!ready || !clock.running) return;
+    tick();
+    const interval = window.setInterval(tick, 250);
+    const onWake = () => tick();
+    window.addEventListener("focus", onWake);
+    document.addEventListener("visibilitychange", onWake);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onWake);
+      document.removeEventListener("visibilitychange", onWake);
     };
+  }, [ready, clock.running, tick]);
 
-    sync();
-    const interval = window.setInterval(sync, 500);
-    return () => window.clearInterval(interval);
-  }, [running, endAt, phase, completed, settings]);
+  useEffect(() => () => { void audioRef.current?.close(); }, []);
 
   const start = useCallback(() => {
-    setRunning(true);
-    setEndAt(Date.now() + secondsLeft * 1000);
-  }, [secondsLeft]);
+    if (audioSettingsRef.current.enabled) void enableAudio();
+    const previous = clockRef.current;
+    if (previous.running) return;
+    const now = Date.now();
+    const next = { ...previous, running: true, endAt: now + previous.secondsLeft * 1000 };
+    warnedBoundary.current = null;
+    tickedSecond.current = null;
+    commit(next);
+  }, [commit, enableAudio]);
 
   const pause = useCallback(() => {
-    if (endAt) setSecondsLeft(Math.max(1, Math.ceil((endAt - Date.now()) / 1000)));
-    setRunning(false);
-    setEndAt(null);
-  }, [endAt]);
+    const previous = clockRef.current;
+    const current = advancePomodoroClock(previous, Date.now()).clock;
+    commit({ ...current, running: false, endAt: null });
+    audioRef.current?.stop();
+    warnedBoundary.current = null;
+    tickedSecond.current = null;
+  }, [commit]);
 
   const reset = useCallback(() => {
-    setRunning(false);
-    setEndAt(null);
-    setSecondsLeft(minutesForPomodoroPhase(phase, settings) * 60);
-  }, [phase, settings]);
+    const previous = clockRef.current;
+    commit({ ...previous, running: false, endAt: null, secondsLeft: minutesForPomodoroPhase(previous.phase, previous.settings) * 60 });
+    audioRef.current?.stop();
+    warnedBoundary.current = null;
+    tickedSecond.current = null;
+  }, [commit]);
 
   const skip = useCallback(() => {
-    const next = nextPhase(phase, completed, settings);
-    const nextSeconds = minutesForPomodoroPhase(next.phase, settings) * 60;
-    setPhase(next.phase);
-    setCompleted(next.completed);
-    setSecondsLeft(nextSeconds);
-    if (running) setEndAt(Date.now() + nextSeconds * 1000);
-    else setEndAt(null);
-  }, [phase, completed, settings, running]);
+    const previous = clockRef.current;
+    const next = nextPomodoroPhase(previous.phase, previous.completed, previous.settings);
+    const secondsLeft = minutesForPomodoroPhase(next.phase, previous.settings) * 60;
+    const endAt = previous.running ? Date.now() + secondsLeft * 1000 : null;
+    commit({ ...previous, ...next, secondsLeft, endAt });
+    audioRef.current?.stop();
+    warnedBoundary.current = null;
+    tickedSecond.current = null;
+    announce(next.phase === "work" ? "Retour à la concentration." : "La pause commence.", "transition");
+    if (previous.running) play(next.phase === "work" ? "workStart" : "breakStart");
+  }, [announce, commit, play]);
 
-  const updateSetting = useCallback(
-    (key: keyof PomodoroSettings, value: number) => {
-      const limits: Record<keyof PomodoroSettings, [number, number]> = {
-        work: [5, 120],
-        shortBreak: [1, 30],
-        longBreak: [5, 60],
-        longBreakEvery: [2, 8],
-      };
-      const nextValue = clamp(value, ...limits[key]);
-      const nextSettings = { ...settings, [key]: nextValue };
-      setSettings(nextSettings);
+  const updateSetting = useCallback((key: keyof PomodoroSettings, value: number) => {
+    const previous = clockRef.current;
+    const limits: Record<keyof PomodoroSettings, [number, number]> = {
+      work: [5, 120], shortBreak: [1, 30], longBreak: [5, 60], longBreakEvery: [2, 8],
+    };
+    const settings = { ...previous.settings, [key]: clamp(value, ...limits[key]) };
+    const active = (previous.phase === "work" && key === "work") || (previous.phase === "shortBreak" && key === "shortBreak") || (previous.phase === "longBreak" && key === "longBreak");
+    commit({ ...previous, settings, secondsLeft: !previous.running && active ? settings[key] * 60 : previous.secondsLeft });
+  }, [commit]);
 
-      if (
-        !running &&
-        ((phase === "work" && key === "work") ||
-          (phase === "shortBreak" && key === "shortBreak") ||
-          (phase === "longBreak" && key === "longBreak"))
-      ) {
-        setSecondsLeft(nextValue * 60);
-      }
-    },
-    [settings, running, phase],
-  );
+  const updateAudioSetting = useCallback((key: keyof FocusAudioSettings, value: boolean | number) => {
+    const options = sanitizeAudio({ ...audioSettingsRef.current, [key]: value });
+    audioSettingsRef.current = options;
+    setAudioSettings(options);
+    if (!options.enabled) audioRef.current?.stop();
+    else if (key === "enabled" && options.enabled) void enableAudio();
+    if (key === "warningSeconds") warnedBoundary.current = null;
+  }, [enableAudio]);
 
-  const value = useMemo<PomodoroContextValue>(
-    () => ({
-      settings,
-      phase,
-      secondsLeft,
-      running,
-      completed,
-      endAt,
-      ready,
-      start,
-      pause,
-      reset,
-      skip,
-      updateSetting,
-    }),
-    [settings, phase, secondsLeft, running, completed, endAt, ready, start, pause, reset, skip, updateSetting],
-  );
+  const countdown = clock.running && audioSettings.warningSeconds > 0 && clock.secondsLeft <= audioSettings.warningSeconds ? clock.secondsLeft : null;
+  const value = useMemo<PomodoroContextValue>(() => ({
+    ...clock, ready, audioSettings, audioReady, announcement, countdown,
+    start, pause, reset, skip, updateSetting, updateAudioSetting, enableAudio, testAudio,
+  }), [clock, ready, audioSettings, audioReady, announcement, countdown, start, pause, reset, skip, updateSetting, updateAudioSetting, enableAudio, testAudio]);
 
   return <PomodoroContext.Provider value={value}>{children}</PomodoroContext.Provider>;
 }
