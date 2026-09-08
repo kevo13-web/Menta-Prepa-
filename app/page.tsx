@@ -8,6 +8,7 @@ import {
   Target,
 } from "lucide-react";
 import { PremiumButton } from "@/components/PremiumButton";
+import { CheckoutButton } from "@/components/CheckoutButton";
 import { GlassCard } from "@/components/GlassCard";
 import { Reveal } from "@/components/Reveal";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -27,24 +28,16 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
           <div className="py-10 sm:py-16">
             <Reveal>
-              <p className="mb-5 text-xs font-semibold uppercase tracking-[0.28em] text-[#4d7192]">
-                Travailler aujourd’hui, pour les horizons de demain.
-              </p>
+              <p className="mb-5 text-xs font-semibold uppercase tracking-[0.28em] text-[#4d7192]">Travailler aujourd’hui, pour les horizons de demain.</p>
             </Reveal>
             <Reveal delay={0.08}>
-              <h1 className="display-serif text-balance text-6xl font-medium leading-[0.94] text-[#15314f] sm:text-7xl lg:text-8xl">
-                Menta <span className="italic">Prépa</span>
-              </h1>
+              <h1 className="display-serif text-balance text-6xl font-medium leading-[0.94] text-[#15314f] sm:text-7xl lg:text-8xl">Menta <span className="italic">Prépa</span></h1>
             </Reveal>
             <Reveal delay={0.14}>
-              <p className="display-serif mt-5 max-w-xl text-3xl italic leading-tight text-[#456883] sm:text-4xl">
-                Des bases solides pour voir plus loin.
-              </p>
+              <p className="display-serif mt-5 max-w-xl text-3xl italic leading-tight text-[#456883] sm:text-4xl">Des bases solides pour voir plus loin.</p>
             </Reveal>
             <Reveal delay={0.2}>
-              <p className="mt-6 max-w-xl text-base leading-7 text-[#52687b] sm:text-lg">
-                Fiches, quiz, plannings et méthodes pour t’accompagner tout au long de ta prépa. Avancer, comprendre, progresser.
-              </p>
+              <p className="mt-6 max-w-xl text-base leading-7 text-[#52687b] sm:text-lg">Fiches, quiz, plannings et méthodes pour t’accompagner tout au long de ta prépa. Avancer, comprendre, progresser.</p>
             </Reveal>
             <Reveal delay={0.26}>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -85,19 +78,13 @@ export default function HomePage() {
 
       <section className="px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <Reveal>
-            <SectionHeader eyebrow="Ce que Menta Prépa change" title="Un espace calme pour mieux travailler." description="Tout ce dont tu as besoin pour organiser ta prépa sans surcharge visuelle : des priorités claires, des outils simples et une progression visible." />
-          </Reveal>
+          <Reveal><SectionHeader eyebrow="Ce que Menta Prépa change" title="Un espace calme pour mieux travailler." description="Tout ce dont tu as besoin pour organiser ta prépa sans surcharge visuelle : des priorités claires, des outils simples et une progression visible." /></Reveal>
           <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             {benefits.map((benefit, index) => {
               const Icon = benefitIcons[index];
               return (
                 <Reveal key={benefit.title} delay={index * 0.05}>
-                  <GlassCard className="h-full">
-                    <Icon className="mb-6 h-7 w-7 text-mint" />
-                    <h3 className="text-lg font-semibold text-frost">{benefit.title}</h3>
-                    <p className="mt-3 text-sm leading-6 text-muted">{benefit.text}</p>
-                  </GlassCard>
+                  <GlassCard className="h-full"><Icon className="mb-6 h-7 w-7 text-mint" /><h3 className="text-lg font-semibold text-frost">{benefit.title}</h3><p className="mt-3 text-sm leading-6 text-muted">{benefit.text}</p></GlassCard>
                 </Reveal>
               );
             })}
@@ -111,11 +98,7 @@ export default function HomePage() {
           <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {howItWorks.map((step, index) => (
               <Reveal key={step} delay={index * 0.06}>
-                <div className="rounded-2xl border border-[#315b7f]/10 bg-white/65 p-6 shadow-sm">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#dbeaf3] text-sm font-bold text-[#173a5e]">{index + 1}</span>
-                  <h3 className="mt-8 text-xl font-semibold text-frost">{step}</h3>
-                  <p className="mt-3 text-sm leading-6 text-muted">Chaque étape réduit la charge mentale et transforme tes objectifs en actions concrètes.</p>
-                </div>
+                <div className="rounded-2xl border border-[#315b7f]/10 bg-white/65 p-6 shadow-sm"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#dbeaf3] text-sm font-bold text-[#173a5e]">{index + 1}</span><h3 className="mt-8 text-xl font-semibold text-frost">{step}</h3><p className="mt-3 text-sm leading-6 text-muted">Chaque étape réduit la charge mentale et transforme tes objectifs en actions concrètes.</p></div>
               </Reveal>
             ))}
           </div>
@@ -128,20 +111,16 @@ export default function HomePage() {
           <div className="mt-10 grid gap-4 md:grid-cols-3">
             {testimonials.map((testimonial, index) => (
               <Reveal key={testimonial.name} delay={index * 0.06}>
-                <GlassCard className="h-full">
-                  <Quote className="mb-6 h-7 w-7 text-sage" />
-                  <p className="text-base leading-7 text-frost/90">“{testimonial.quote}”</p>
-                  <div className="mt-8"><p className="font-semibold text-frost">{testimonial.name}</p><p className="text-sm text-muted">{testimonial.role}</p></div>
-                </GlassCard>
+                <GlassCard className="h-full"><Quote className="mb-6 h-7 w-7 text-sage" /><p className="text-base leading-7 text-frost/90">“{testimonial.quote}”</p><div className="mt-8"><p className="font-semibold text-frost">{testimonial.name}</p><p className="text-sm text-muted">{testimonial.role}</p></div></GlassCard>
               </Reveal>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="px-4 pb-24 sm:px-6 lg:px-8">
+      <section id="tarifs" className="scroll-mt-24 px-4 pb-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <Reveal><SectionHeader eyebrow="Tarifs fictifs" title="Choisis le rythme qui te convient." align="center" /></Reveal>
+          <Reveal><SectionHeader eyebrow="Abonnements" title="Choisis le rythme qui te convient." align="center" /></Reveal>
           <div className="mt-10 grid gap-4 lg:grid-cols-3">
             {pricingPlans.map((plan, index) => (
               <Reveal key={plan.name} delay={index * 0.06}>
@@ -149,7 +128,11 @@ export default function HomePage() {
                   <div className="flex items-start justify-between gap-4"><div><h3 className="text-xl font-semibold text-frost">{plan.name}</h3><p className="mt-2 text-sm text-muted">{plan.description}</p></div>{plan.featured ? <span className="rounded-full bg-[#173a5e] px-3 py-1 text-xs font-semibold text-white">Populaire</span> : null}</div>
                   <p className="mt-8 text-4xl font-semibold text-frost">{plan.price}<span className="text-sm font-medium text-muted"> / mois</span></p>
                   <div className="mt-8 grid gap-3">{plan.features.map((feature) => <div key={feature} className="flex items-center gap-3 text-sm text-frost/85"><Check className="h-4 w-4 text-mint" />{feature}</div>)}</div>
-                  <PremiumButton href="/auth" variant={plan.featured ? "primary" : "secondary"} className="mt-8 w-full">Commencer</PremiumButton>
+                  {plan.name === "Gratuit" ? (
+                    <PremiumButton href="/auth" variant="secondary" className="mt-8 w-full">Créer mon compte</PremiumButton>
+                  ) : (
+                    <CheckoutButton plan={plan.name === "Étudiant Plus" ? "etudiant_plus" : "prepa_pro"} featured={Boolean(plan.featured)} />
+                  )}
                 </div>
               </Reveal>
             ))}
