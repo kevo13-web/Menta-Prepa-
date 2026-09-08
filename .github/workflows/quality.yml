@@ -21,6 +21,14 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-      - run: npm ci
+      - name: Régénérer le verrou des dépendances
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Conserver le verrou régénéré
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-lock-repaired
+          path: package-lock.json
+          retention-days: 1
+      - run: npm ci --no-audit --no-fund
       - run: npm run typecheck
       - run: npm run build
