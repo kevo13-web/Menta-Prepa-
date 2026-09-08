@@ -6,7 +6,7 @@ export type CoachSource = {
   organization: string;
   url: string;
   kind: "evidence" | "directory";
-  scopes: StudyTypeKey[] | ["all"];
+  scopes: Array<StudyTypeKey | "all">;
   trackPattern?: string;
   keywords: string[];
   guidance: string;
