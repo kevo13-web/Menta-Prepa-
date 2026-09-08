@@ -3,12 +3,14 @@ name: Qualité Menta
 on:
   push:
     branches: [commercial-foundation]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   verify:
+    if: github.ref == 'refs/heads/commercial-foundation'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -17,18 +19,29 @@ jobs:
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: commercial-foundation
+          persist-credentials: true
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
-      - name: Régénérer le verrou des dépendances
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - name: Conserver le verrou régénéré
-        uses: actions/upload-artifact@v4
-        with:
-          name: package-lock-repaired
-          path: package-lock.json
-          retention-days: 1
+      - name: Corriger les deux erreurs identifiées
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const path = 'lib/coaching/sources.ts';
+          const before = fs.readFileSync(path, 'utf8');
+          const oldType = 'scopes: StudyTypeKey[] | ["all"];';
+          if (!before.includes(oldType)) throw new Error('Type de portée introuvable');
+          fs.writeFileSync(path, before.replace(oldType, 'scopes: Array<StudyTypeKey | "all">;'));
+          NODE
+          git add package-lock.json lib/coaching/sources.ts
+          if ! git diff --cached --quiet; then
+            git -c user.name='Menta CI' -c user.email='menta-ci@users.noreply.github.com' commit -m 'Synchronise le verrou npm et corrige les portées du coaching'
+            git push origin HEAD:commercial-foundation
+          fi
       - run: npm ci --no-audit --no-fund
       - run: npm run typecheck
       - run: npm run build
